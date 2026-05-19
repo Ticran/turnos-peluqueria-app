@@ -1,0 +1,1 @@
+responsable de agarrar la información del frontend y devolver la del backend de manera segura

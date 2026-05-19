@@ -1,0 +1,1 @@
+aca van los comportamientos de cada objeto. ejemplo: crearLocal y etc
