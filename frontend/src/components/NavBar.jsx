@@ -3,41 +3,26 @@ import { Link } from "react-router-dom";
 function NavBar() {
   return (
     <nav className="sticky top-0 flex items-center justify-between border-b border-zinc-200 bg-white px-8 py-4 shadow-sm">
-      
+
       {/* LOGO */}
       <h1 className="cursor-pointer text-2xl font-bold tracking-wide text-zinc-900">
         TurnosApp
       </h1>
 
       {/* LINKS */}
-      <ul className="flex list-none gap-8">
-        <li>
-          <Link
-            to="/"
-            className="text-base text-zinc-700 transition duration-200 hover:-translate-y-[1px] hover:text-black"
-          >
-            Inicio
-          </Link>
-        </li>
+      <div className="flex flex-1 justify-center items-center gap-10">
+        <Link to="/" className="text-zinc-700 no-underline hover:text-black">
+          Inicio
+        </Link>
 
-        <li>
-          <Link
-            to="/"
-            className="text-base text-zinc-700 transition duration-200 hover:-translate-y-[1px] hover:text-black"
-          >
-            Servicios
-          </Link>
-        </li>
+        <Link to="/servicios" className="text-zinc-700 no-underline hover:text-black">
+          Servicios
+        </Link>
 
-        <li>
-          <Link
-            to="/"
-            className="text-base text-zinc-700 transition duration-200 hover:-translate-y-[1px] hover:text-black"
-          >
-            Reservar
-          </Link>
-        </li>
-      </ul>
+        <Link to="/reservar" className="text-zinc-700 no-underline hover:text-black">
+          Reservar
+        </Link>
+      </div>
 
       {/* BOTONES */}
       <div className="flex gap-4">
