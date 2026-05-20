@@ -1,0 +1,11 @@
+.selected {
+  background-color: #4caf50;
+}
+
+.selected-text {
+  margin-top: 2rem;
+
+  font-size: 1.2rem;
+
+  font-weight: bold;
+}
