@@ -1,5 +1,5 @@
 import React from "react";
-import Card from "../ui/Card";
+import Card from "../ui/Carddashmenu";
 import CalendarCell from "./CalendarCell";
 import { daysOfWeek, timeSlots } from "../../data/calendar";
 import { getAppointmentForSlot } from "../../utils/calendar";
