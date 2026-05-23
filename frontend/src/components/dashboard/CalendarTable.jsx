@@ -6,41 +6,45 @@ import { getAppointmentForSlot } from "../../utils/calendar";
 
 export default function CalendarTable({ appointments, role }) {
   return (
-    <Card className="lg:col-span-2 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-        <h3 className="text-lg font-medium text-slate-900">Agenda Semanal</h3>
-        <span className="text-xs text-slate-500 font-light">Mayo 2026</span>
+    <Card className="col-span-full overflow-hidden border border-slate-300 shadow-sm">
+      {/* Header con un borde inferior más marcado */}
+      <div className="p-6 border-b border-slate-300 bg-white">
+        <h3 className="text-lg font-bold text-slate-950 tracking-tight">Agenda Semanal</h3>
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed border-collapse min-w-[600px]">
+        {/* Tabla con líneas visibles y claras */}
+        <table className="w-full border-collapse border border-slate-300 bg-white">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="w-20 p-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-r border-slate-100">
+            <tr className="border-b-2 border-slate-300">
+              <th className="w-24 p-5 text-center text-xs font-black uppercase tracking-wider text-slate-600 border-r-2 border-slate-300 bg-slate-100">
                 Hora
               </th>
               {daysOfWeek.map((day) => (
-                <th key={day.key} className="p-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                <th key={day.key} className="p-5 text-center text-xs font-black uppercase tracking-wider text-slate-800 border-r border-slate-300 last:border-r-0 bg-slate-50">
                   {day.label}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {timeSlots.map((time) => (
-              <tr key={time} className="border-b border-slate-100 last:border-0 h-20">
-                <td className="p-2 text-center text-xs font-medium text-slate-500 bg-slate-50/50 border-r border-slate-100 sticky left-0 z-10">
+            {timeSlots.map((time, index) => (
+              <tr key={time} className={`border-b border-slate-300 ${index === timeSlots.length - 1 ? 'border-b-0' : ''} h-28`}>
+                <td className="p-4 text-center text-sm font-bold text-slate-700 border-r-2 border-slate-300 bg-slate-100 sticky left-0 z-10">
                   {time}
                 </td>
                 
                 {daysOfWeek.map((day) => {
                   const apt = getAppointmentForSlot(appointments, day.key, time);
                   return (
-                    <CalendarCell 
-                      key={day.key}
-                      appointment={apt}
-                      role={role}
-                    />
+                    <td key={day.key} className="p-1 border-r border-slate-300 last:border-r-0 align-top">
+                      <div className="h-full min-h-[100px] w-full">
+                        <CalendarCell 
+                          appointment={apt}
+                          role={role}
+                        />
+                      </div>
+                    </td>
                   );
                 })}
               </tr>
