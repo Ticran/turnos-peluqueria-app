@@ -19,13 +19,17 @@ export default function useBooking() {
         if (!res.ok) throw new Error("Error obteniendo servicios");
         return res.json();
       })
-      .then((data) => setDbServices(data))
+      .then((data) => {
+        // CORREGIDO: Filtro de seguridad para que la Home oculte los dados de baja lógica
+        const activos = data.filter(svc => svc.active !== false);
+        setDbServices(activos);
+      })
       .catch((err) => console.error("Error en servicios del backend:", err));
   }, []);
 
   // 2. Petición HTTP al backend para traer el equipo real de profesionales
   useEffect(() => {
-    fetch("http://localhost:8080/api/employees/business/1") // Asegúrate de tener expuesto este GET
+    fetch("http://localhost:8080/api/employees/business/1") 
       .then((res) => {
         if (!res.ok) throw new Error("Error obteniendo empleados");
         return res.json();
@@ -33,7 +37,6 @@ export default function useBooking() {
       .then((data) => setDbBarbers(data))
       .catch((err) => {
         console.error("Error en empleados del backend (usando fallback local):", err);
-        // Fallback en caso de que no lo tengas expuesto aún para que no rompa la grilla
         setDbBarbers([{ id: 1, name: "Lucas Gómez", role: "BARBER", rating: 4.9, reviews: 120 }]);
       });
   }, []);
@@ -61,7 +64,7 @@ export default function useBooking() {
     selectedTime,
     activeCategory,
     filteredServices,
-    barbersList: dbBarbers, // Le pasamos la lista real de la DB al componente
+    barbersList: dbBarbers, 
     setBookingStep,
     setSelectedService,
     setSelectedBarber,

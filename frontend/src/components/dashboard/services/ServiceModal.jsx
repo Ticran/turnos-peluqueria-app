@@ -9,7 +9,7 @@ export default function ServiceModal({ isOpen, onClose, service, onServiceSaved 
   // 1. CORREGIDO: Declaramos la variable exactamente como durationInMinutes
   const [durationInMinutes, setDurationInMinutes] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("General"); 
+  const [category, setCategory] = useState(""); 
   const [submitting, setSubmitting] = useState(false);
 
   // Sincronizar el formulario con el servicio seleccionado (si se va a editar) o limpiarlo (si es nuevo)
@@ -121,16 +121,20 @@ export default function ServiceModal({ isOpen, onClose, service, onServiceSaved 
             </div>
           </div>
 
+          {/* MENÚ DESPLEGABLE CAMBIADO ACÁ */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500 uppercase">Categoría</label>
-            <input 
-              type="text" 
+            <select 
               value={category} 
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="Ej. Barberia, Peluquería, Cejas" 
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]" 
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020] cursor-pointer" 
               required 
-            />
+            >
+              <option value="General">General</option>
+              <option value="Corte">Corte</option>
+              <option value="Barba">Barba</option>
+              <option value="Tratamiento">Tratamiento</option>
+            </select>
           </div>
 
           <div className="space-y-1">

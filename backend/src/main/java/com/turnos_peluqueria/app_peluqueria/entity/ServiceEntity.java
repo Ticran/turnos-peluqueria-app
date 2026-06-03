@@ -17,6 +17,8 @@ public class ServiceEntity {
 
     private String description;
 
+    private String category;
+
     @Column(nullable = false, columnDefinition = "NUMERIC(10,2)")
     private Double price;
 

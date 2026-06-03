@@ -31,6 +31,7 @@ public class ServiceEntityService {
             dto.setId(entity.getId());
             dto.setName(entity.getName());
             dto.setDescription(entity.getDescription());
+            dto.setCategory(entity.getCategory());
             dto.setPrice(entity.getPrice());
             dto.setDurationInMinutes(entity.getDurationInMinutes());
             dto.setActive(entity.getActive());
@@ -50,6 +51,7 @@ public class ServiceEntityService {
         ServiceEntity entity = new ServiceEntity();
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
+        entity.setCategory(dto.getCategory());
         entity.setPrice(dto.getPrice());
         entity.setDurationInMinutes(dto.getDurationInMinutes());
         entity.setActive(dto.getActive() != null ? dto.getActive() : true);
@@ -72,6 +74,7 @@ public class ServiceEntityService {
         // Actualizamos los campos con los datos nuevos que vienen del frontend
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
+        entity.setCategory(dto.getCategory());
         entity.setPrice(dto.getPrice());
         entity.setDurationInMinutes(dto.getDurationInMinutes());
         

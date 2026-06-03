@@ -21,13 +21,13 @@ export default function BookingSidebar({ selectedService, selectedBarber, select
 
     // Mapeo perfecto compatible con las entidades e Hibernate de Spring Boot
     const payloadTurno = {
-      businessId: 1, // Multi-tenant por defecto
+      businessId: 1, // Multi-tenant por defecto (Tenant 1 de pruebas)
       employeeId: parseInt(selectedBarber.id),
       serviceId: parseInt(selectedService.id),
       clientName: clientName,
       clientPhone: clientPhone,
       date: selectedDate,               // En formato "YYYY-MM-DD"
-      time: `${selectedTime}:00`        // Le concatenamos los segundos para que lo procese LocalTime
+      time: `${selectedTime}:00`        // Le concatenamos los segundos para que lo procese LocalTime en Java
     };
 
     fetch("http://localhost:8080/api/appointments", {
@@ -38,37 +38,42 @@ export default function BookingSidebar({ selectedService, selectedBarber, select
       body: JSON.stringify(payloadTurno),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Error en el servidor al procesar la reserva");
+        if (!res.ok) throw new Error("Error al procesar la reserva en el servidor.");
         return res.json();
       })
       .then((data) => {
-        alert(`¡Turno solicitado con éxito! Tu reserva quedó registrada como PENDIENTE. Nos comunicaremos a la brevedad. 🚀`);
-        
-        // Limpiamos campos locales del formulario
+        alert(`¡Turno reservado con éxito para ${data.clientName}! Ya figura en la agenda.`);
+        // Limpiamos los campos del formulario de contacto
         setClientName("");
         setClientPhone("");
-        // Reseteamos el Wizard de reserva regresando al paso 1
+        // Reseteamos el hook global para que la landing vuelva al Paso 1 (Servicios)
         handleResetBooking();
       })
       .catch((err) => {
-        console.error("Error enviando el turno a PostgreSQL:", err);
-        alert("No se pudo conectar con el servidor. Revisá que Spring Boot esté activo.");
+        console.error("Error al guardar el turno:", err);
+        alert("Hubo un problema al conectar con el servidor. Intentá de nuevo.");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
-    <div className="lg:col-span-4 bg-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl space-y-6 lg:sticky lg:top-24">
+    <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white sticky top-6 shadow-xl space-y-6">
+      <h3 className="text-lg font-bold font-poppins tracking-tight border-b border-slate-800 pb-4 text-slate-100">
+        Resumen de tu Reserva
+      </h3>
+
+      {/* Tarjeta dinámica con los datos seleccionados por el cliente */}
       <BookingSummary
         selectedService={selectedService}
         selectedBarber={selectedBarber}
         selectedDate={selectedDate}
         selectedTime={selectedTime}
-        handleResetBooking={handleResetBooking}
       />
 
-      {/* Si completó los 3 pasos, le inyectamos los inputs de contacto en la misma barra */}
-      {isStepsCompleted && (
+      {/* Si ya seleccionó todo el flujo de pasos, habilitamos el formulario de contacto directo */}
+      {isStepsCompleted ? (
         <form onSubmit={handleConfirmarReserva} className="pt-4 border-t border-slate-800 space-y-3 animate-fade-in">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#800020]">
             Datos de contacto
@@ -101,9 +106,15 @@ export default function BookingSidebar({ selectedService, selectedBarber, select
             disabled={loading}
             className="w-full py-3 text-xs font-medium tracking-wider text-white bg-[#800020] hover:bg-[#5e0017] rounded-xl shadow-md transition-all active:scale-[0.98] disabled:opacity-50 uppercase font-poppins"
           >
-            {loading ? "Procesando Turno..." : "Confirmar Mi Turno real"}
+            {loading ? "Reservando..." : "Confirmar Reserva"}
           </button>
         </form>
+      ) : (
+        <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-slate-800/60">
+          <p className="text-xs text-slate-400">
+            Completá todos los pasos anteriores para confirmar tu reserva.
+          </p>
+        </div>
       )}
     </div>
   );
