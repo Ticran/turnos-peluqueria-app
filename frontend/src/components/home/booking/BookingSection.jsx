@@ -30,20 +30,20 @@ export default function BookingSection({ bookingProps }) {
     <main id="reservar" className="py-8 sm:py-12 mx-auto max-w-7xl w-full px-4 sm:px-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <div className="lg:col-span-8">
         <Card className="space-y-8 overflow-hidden">
-          <BookingHeader 
-            bookingStep={bookingStep} 
-            setBookingStep={setBookingStep} 
-            selectedService={selectedService} 
+          <BookingHeader
+            bookingStep={bookingStep}
+            setBookingStep={setBookingStep}
+            selectedService={selectedService}
           />
 
           {bookingStep === 1 && (
             <div className="space-y-6 animate-fade-in">
-              <CategoryTabs 
-                activeCategory={activeCategory} 
-                setActiveCategory={setActiveCategory} 
+              <CategoryTabs
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
               />
-              <ServicesGrid 
-                filteredServices={filteredServices} 
+              <ServicesGrid
+                filteredServices={filteredServices}
                 selectedService={selectedService}
                 setSelectedService={setSelectedService}
                 setBookingStep={setBookingStep}
@@ -52,21 +52,22 @@ export default function BookingSection({ bookingProps }) {
           )}
 
           {bookingStep === 2 && (
-            <BarbersGrid 
+            <BarbersGrid
               selectedBarber={selectedBarber}
               setSelectedBarber={setSelectedBarber}
               setBookingStep={setBookingStep}
+              barbersList={bookingProps.barbersList} // <-- Pasamos la data real aquí
             />
           )}
 
           {bookingStep === 3 && (
             <div className="space-y-6 animate-fade-in">
-              <DateSelector 
+              <DateSelector
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 setSelectedTime={setSelectedTime}
               />
-              <TimeSlots 
+              <TimeSlots
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 setSelectedTime={setSelectedTime}
@@ -76,7 +77,7 @@ export default function BookingSection({ bookingProps }) {
         </Card>
       </div>
 
-      <BookingSidebar 
+      <BookingSidebar
         selectedService={selectedService}
         selectedBarber={selectedBarber}
         selectedDate={selectedDate}

@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import AppointmentCard from "./AppointmentCard";
-import AppointmentModal from "./appointments/AppointmentModal"; // Asegúrate de que la ruta coincida con tu estructura
+import AppointmentModal from "./appointments/AppointmentModal"; 
 
 export default function CalendarCell({ appointment, role }) {
   // Estado local para abrir el modal de gestión
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <td className="p-1.5 vertical-align-top border-r border-slate-50 last:border-r-0 relative group">
+    // CAMBIADO: Ahora es un div neutro. Conservamos clases de posicionamiento necesarias.
+    <div className="w-full h-full relative group">
       {appointment ? (
         <>
           {/* Envolvemos el AppointmentCard en un div clickeable */}
@@ -31,6 +32,6 @@ export default function CalendarCell({ appointment, role }) {
           <span className="text-xs text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity">+</span>
         </div>
       )}
-    </td>
+    </div>
   );
 }

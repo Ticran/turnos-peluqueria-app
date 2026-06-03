@@ -62,4 +62,27 @@ public class ServiceEntityService {
         dto.setId(savedEntity.getId());
         return dto;
     }
+
+    // 3. ACTUALIZAR O ELIMINAR (BAJA LÓGICA) UN SERVICIO
+    public ServiceDTO updateService(Long id, ServiceDTO dto) {
+        // Buscamos el servicio que queremos editar
+        ServiceEntity entity = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + id));
+
+        // Actualizamos los campos con los datos nuevos que vienen del frontend
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+        entity.setPrice(dto.getPrice());
+        entity.setDurationInMinutes(dto.getDurationInMinutes());
+        
+        // Esta línea es la clave para que funcione el botón "Eliminar" en React (active pasa a false)
+        entity.setActive(dto.getActive());
+
+        // Guardamos los cambios
+        ServiceEntity savedEntity = serviceRepository.save(entity);
+
+        // Devolvemos el DTO actualizado
+        dto.setId(savedEntity.getId());
+        return dto;
+    }
 }

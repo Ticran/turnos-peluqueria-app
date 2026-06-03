@@ -28,4 +28,11 @@ public class ServiceController {
     public ServiceDTO create(@RequestBody ServiceDTO serviceDTO) {
         return serviceEntityService.createService(serviceDTO);
     }
+
+    // PUT: http://localhost:8080/api/services/{id}
+    // Recibe el ID en la URL y el JSON modificado en el cuerpo para actualizarlo
+    @PutMapping("/{id}")
+    public ServiceDTO update(@PathVariable Long id, @RequestBody ServiceDTO serviceDTO) {
+        return serviceEntityService.updateService(id, serviceDTO);
+    }
 }

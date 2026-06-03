@@ -1,23 +1,83 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function NewAppointmentModal({ isOpen, onClose }) {
+export default function NewAppointmentModal({ isOpen, onClose, onAppointmentCreated }) {
+  // Si el modal está cerrado, no renderizamos nada
   if (!isOpen) return null;
 
+  // Estados para almacenar la información dinámica de la base de datos
+  const [dbServices, setDbServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  // El estado del formulario ahora maneja IDs numéricos para los selectores
   const [formData, setFormData] = useState({
-    client: "",
-    phone: "",
-    service: "",
-    barber: "",
+    clientName: "",
+    clientPhone: "",
+    serviceId: "",
+    employeeId: "1", // Hardcodeado por ahora con Lucas Gómez (ID 1 de la DB)
     date: "",
     time: "",
   });
 
+  // Efecto para buscar los servicios reales en PostgreSQL cada vez que se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingServices(true);
+      fetch("http://localhost:8080/api/services/business/1") // ID 1 de tu negocio de prueba
+        .then((res) => {
+          if (!res.ok) throw new Error("Error al conectar con la API de servicios");
+          return res.json();
+        })
+        .then((data) => {
+          setDbServices(data);
+          setLoadingServices(false);
+        })
+        .catch((err) => {
+          console.error("Error al cargar servicios desde Postgres:", err);
+          setLoadingServices(false);
+        });
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Nuevo turno creado (Simulado):", formData);
-    // Aquí luego conectaremos con el backend
-    alert("Turno agendado con éxito (Simulación)");
-    onClose();
+
+    // Estructuramos el JSON tal como lo mapea tu entidad de Spring Boot
+    const nuevoTurnoBackend = {
+      businessId: 1, // Tu Tenant de pruebas por defecto
+      employeeId: parseInt(formData.employeeId),
+      serviceId: parseInt(formData.serviceId),
+      clientName: formData.clientName,
+      clientPhone: formData.clientPhone,
+      date: formData.date,               // Mantiene formato "YYYY-MM-DD"
+      time: `${formData.time}:00`        // Sumamos los segundos que Hibernate exige para LocalTime
+    };
+
+    // Petición HTTP POST real hacia tu backend en Linux
+    fetch("http://localhost:8080/api/appointments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(nuevoTurnoBackend),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error en el servidor al guardar el turno");
+        return res.json();
+      })
+      .then((data) => {
+        alert("¡Turno guardado con éxito en tu PostgreSQL! 🚀");
+        
+        // Si pasaste una función para refrescar la grilla de la agenda, la llamamos
+        if (onAppointmentCreated) {
+          onAppointmentCreated();
+        }
+        
+        onClose(); // Cerramos el modal limpio
+      })
+      .catch((err) => {
+        console.error("Error al impactar la DB:", err);
+        alert("No se pudo agendar el turno. Revisá si Spring Boot está corriendo.");
+      });
   };
 
   return (
@@ -42,7 +102,7 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
                 type="text" 
                 placeholder="Nombre completo"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#800020] outline-none"
-                onChange={(e) => setFormData({...formData, client: e.target.value})}
+                onChange={(e) => setFormData({...formData, clientName: e.target.value})}
               />
             </div>
             <div className="space-y-1">
@@ -52,7 +112,7 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
                 type="tel" 
                 placeholder="+54 9..."
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#800020] outline-none"
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
               />
             </div>
           </div>
@@ -61,24 +121,31 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Servicio</label>
               <select 
+                required
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, service: e.target.value})}
+                onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
+                value={formData.serviceId}
               >
-                <option value="">Seleccionar servicio</option>
-                <option value="Corte">Corte de Autor</option>
-                <option value="Barba">Perfilado de Barba</option>
-                <option value="Combo">Combo Lumen</option>
+                <option value="">
+                  {loadingServices ? "Cargando catálogo..." : "Seleccionar servicio"}
+                </option>
+                {dbServices.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name} — ${service.price}
+                  </option>
+                ))}
               </select>
             </div>
+            
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Barbero</label>
               <select 
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, barber: e.target.value})}
+                onChange={(e) => setFormData({...formData, employeeId: e.target.value})}
+                value={formData.employeeId}
               >
-                <option value="">Cualquier barbero</option>
-                <option value="Mateo">Mateo Palacios</option>
-                <option value="Santiago">Santiago López</option>
+                {/* Dejamos mapeado al barbero de prueba que cargamos en Flyway */}
+                <option value="1">Lucas Gómez (DB)</option>
               </select>
             </div>
           </div>
@@ -87,6 +154,7 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Fecha</label>
               <input 
+                required
                 type="date" 
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -95,6 +163,7 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Hora</label>
               <input 
+                required
                 type="time" 
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
                 onChange={(e) => setFormData({...formData, time: e.target.value})}
@@ -112,7 +181,8 @@ export default function NewAppointmentModal({ isOpen, onClose }) {
             </button>
             <button 
               type="submit"
-              className="px-5 py-2 text-sm font-medium text-white bg-[#800020] hover:bg-[#5e0017] rounded-lg shadow-md transition-all active:scale-95"
+              disabled={loadingServices}
+              className="px-5 py-2 text-sm font-medium text-white bg-[#800020] hover:bg-[#5e0017] rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50"
             >
               Confirmar Reserva
             </button>
