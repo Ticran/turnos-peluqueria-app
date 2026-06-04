@@ -4,49 +4,53 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "appointments")
-@Data // Esta anotación de Lombok crea mágicamente los getters y setters (como .getClientName, .setDate, etc.)
+@Data
 public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- DATOS DEL CLIENTE (Como no tienen cuenta, van directo en el turno) ---
-    @Column(nullable = false)
+    @Column(name = "client_name", nullable = false)
     private String clientName;
 
-    @Column(nullable = false)
+    @Column(name = "client_phone", nullable = false)
     private String clientPhone;
 
+    @Column(name = "client_email")
     private String clientEmail;
 
-    // --- DATOS DEL TURNO ---
     @Column(nullable = false)
-    private LocalDate date; // Fecha del turno (Año-Mes-Día)
+    private LocalDate date;
 
     @Column(nullable = false)
-    private LocalTime time; // Hora del turno (Hora:Minutos)
+    private LocalTime time;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AppointmentStatus status = AppointmentStatus.PENDING; // Arranca como PENDING (Pendiente)
+    private AppointmentStatus status = AppointmentStatus.PENDING;
 
-    private String observations; // Notas o comentarios que deje el peluquero/barbero
+    private String observations;
 
-    // --- RELACIONES (Las uniones con las otras tablas) ---
-    
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = false)
-    private Business business; // Multi-tenant: A qué peluquería pertenece este turno
+    private Business business;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User employee; // Qué profesional atiende al cliente
+    private User employee;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)
-    private ServiceEntity service; // Qué servicio se va a realizar (Corte, barba, etc.)
+    private ServiceEntity service;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 }

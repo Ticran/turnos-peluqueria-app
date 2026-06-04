@@ -22,7 +22,7 @@ export default React.memo(function ServiceCard({ service, isSelected, onSelect }
           </span>
         </div>
         <p className="text-xs text-slate-500 font-light line-clamp-2 leading-relaxed">
-          {service.desc}
+          {service.description}
         </p>
       </div>
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50 text-[11px]">

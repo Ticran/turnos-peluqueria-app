@@ -43,35 +43,32 @@ export default function ServiceManagement({ role }) {
 
   // FUNCIÓN NUEVA: Borrado lógico enviando la actualización al backend
   const handleDeleteService = (service) => {
-    if (role !== "admin") return;
-    if (!window.confirm(`¿Estás seguro de que querés dar de baja "${service.name}" del catálogo?`)) return;
+  if (role !== "admin") return;
 
-    // Modificamos el estado active a false manteniendo los datos actuales del servicio
-    const payloadDesactivar = {
-      ...service,
-      active: false
-    };
+  if (!window.confirm(`¿Dar de baja "${service.name}"?`)) {
+    return;
+  }
 
-    fetch(`http://localhost:8080/api/services/${service.id}`, {
-      method: "PUT", // Usamos PUT para actualizar la entidad completa en la DB
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payloadDesactivar)
+  fetch(
+    `http://localhost:8080/api/services/${service.id}/business/1`,
+    {
+      method: "DELETE",
+    }
+  )
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Error al eliminar");
+      }
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al desactivar el servicio en el servidor");
-        return res.json();
-      })
-      .then(() => {
-        alert("Servicio dado de baja con éxito. Ya no figurará visible en el sistema. 🚫");
-        fetchServices(); // Refrescamos el listado automáticamente
-      })
-      .catch((err) => {
-        console.error("Error al dar de baja el servicio:", err);
-        alert("Ocurrió un error al procesar la baja. Verificá tu backend en Spring Boot.");
-      });
-  };
+    .then(() => {
+      alert("Servicio dado de baja correctamente");
+      fetchServices();
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Error al eliminar el servicio");
+    });
+};
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

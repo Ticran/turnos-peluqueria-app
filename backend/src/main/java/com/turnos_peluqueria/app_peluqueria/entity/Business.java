@@ -2,10 +2,12 @@ package com.turnos_peluqueria.app_peluqueria.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "businesses")
-@Data // Lombok nos genera automáticamente los Getters, Setters y Constructor
+@Data
 public class Business {
 
     @Id
@@ -16,15 +18,29 @@ public class Business {
     private String name;
 
     private String description;
-    
-    @Column(nullable = false)
+
+    @Column(nullable = false, unique = true)
     private String email;
-    
+
     private String phone;
 
-    @Column(name = "opening_time")
-    private String openingTime; // Ejemplo: "09:00"
+    @Column(name = "opening_time", nullable = false)
+    private LocalTime openingTime;
 
-    @Column(name = "closing_time")
-    private String closingTime; // Ejemplo: "20:00"
+    @Column(name = "closing_time", nullable = false)
+    private LocalTime closingTime;
+
+    @Column(nullable = false)
+    private String status = "ACTIVE";
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
+
+    @Column(name = "address")
+    private String address;
+    @Column(name = "image_url")
+    private String imageUrl;
 }

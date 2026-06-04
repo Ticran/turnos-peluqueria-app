@@ -5,7 +5,10 @@ import com.turnos_peluqueria.app_peluqueria.entity.*;
 import com.turnos_peluqueria.app_peluqueria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,24 +17,30 @@ public class AppointmentService {
 
     @Autowired
     private AppointmentRepository appointmentRepository;
-
     @Autowired
     private BusinessRepository businessRepository;
-
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private ServiceEntityRepository serviceRepository;
 
-    // 1. CREAR UN TURNO (Flujo de reserva pública o desde panel)
+    @Transactional
     public AppointmentDTO createAppointment(AppointmentDTO dto) {
         Business business = businessRepository.findById(dto.getBusinessId())
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
-        User employee = userRepository.findById(dto.getEmployeeId())
-                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
-        ServiceEntity service = serviceRepository.findById(dto.getServiceId())
-                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+
+        User employee = userRepository.findByBusinessIdAndId(dto.getBusinessId(), dto.getEmployeeId())
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado en este negocio"));
+
+        ServiceEntity service = serviceRepository.findByBusinessIdAndId(dto.getBusinessId(), dto.getServiceId())
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado en este negocio"));
+
+        // VALIDACIÓN CRÍTICA: Control de solapamiento de horarios
+        if (hasOverlap(dto.getBusinessId(), dto.getEmployeeId(), dto.getDate(), dto.getTime(),
+                service.getDurationInMinutes())) {
+            throw new IllegalStateException(
+                    "El empleado no tiene disponibilidad en ese horario. Se superpone con otro turno.");
+        }
 
         Appointment appointment = new Appointment();
         appointment.setClientName(dto.getClientName());
@@ -40,27 +49,90 @@ public class AppointmentService {
         appointment.setDate(dto.getDate());
         appointment.setTime(dto.getTime());
         appointment.setObservations(dto.getObservations());
-        
-        // Estado inicial por defecto
-        appointment.setStatus(dto.getStatus() != null ? dto.getStatus() : AppointmentStatus.PENDING);
-        
-        // Vinculamos los objetos de la base de datos
+        appointment.setStatus(AppointmentStatus.PENDING);
+
         appointment.setBusiness(business);
         appointment.setEmployee(employee);
         appointment.setService(service);
 
         Appointment saved = appointmentRepository.save(appointment);
-        
-        // Devolvemos el DTO completo
         dto.setId(saved.getId());
+        dto.setStatus(saved.getStatus());
         return dto;
     }
 
-    // 2. OBTENER TURNOS DE UN EMPLEADO ESPECÍFICO (Para la vista "MyAgenda.jsx" con privacidad)
-    public List<AppointmentDTO> getAppointmentsByEmployee(Long employeeId) {
-        List<Appointment> appointments = appointmentRepository.findByEmployeeId(employeeId);
-        List<AppointmentDTO> dtos = new ArrayList<>();
+    // Corregido y mejorado: Ahora filtra opcionalmente por fecha para no colapsar
+    // la app
+    @Transactional(readOnly = true)
+    public List<AppointmentDTO> getAppointmentsByEmployeeAndDate(Long businessId, Long employeeId, LocalDate date) {
+        List<Appointment> appointments;
+        if (date != null) {
+            appointments = appointmentRepository.findByBusinessIdAndEmployeeIdAndDate(businessId, employeeId, date);
+        } else {
+            appointments = appointmentRepository.findByBusinessIdAndEmployeeId(businessId, employeeId);
+        }
+        return convertToDtoList(appointments);
+    }
 
+    // Nuevo: Agenda global diaria del negocio (Esencial para la
+    // recepción/administrador)
+    @Transactional(readOnly = true)
+    public List<AppointmentDTO> getDailyAgenda(Long businessId, LocalDate date) {
+        List<Appointment> appointments = appointmentRepository.findByBusinessIdAndDate(businessId, date);
+        return convertToDtoList(appointments);
+    }
+
+    // Nuevo: Cancelación lógica formal
+    @Transactional
+    public void cancelAppointment(Long businessId, Long appointmentId) {
+        Appointment appointment = appointmentRepository.findByBusinessIdAndId(businessId, appointmentId)
+                .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+    }
+
+    // Nuevo: Finalizar turno (Suma al historial de facturación del empleado)
+    @Transactional
+    public void completeAppointment(Long businessId, Long appointmentId) {
+        Appointment appointment = appointmentRepository.findByBusinessIdAndId(businessId, appointmentId)
+                .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointmentRepository.save(appointment);
+    }
+
+    // Nuevo: Registrar que el cliente no asistió
+    @Transactional
+    public void registerNoShow(Long businessId, Long appointmentId) {
+        Appointment appointment = appointmentRepository.findByBusinessIdAndId(businessId, appointmentId)
+                .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+        appointment.setStatus(AppointmentStatus.NO_SHOW);
+        appointmentRepository.save(appointment);
+    }
+
+    // ALGORITMO: Verifica si el nuevo turno choca con la agenda existente del
+    // empleado
+    private boolean hasOverlap(Long businessId, Long employeeId, LocalDate date, LocalTime targetStart,
+            Integer durationMinutes) {
+        List<Appointment> activeAppointments = appointmentRepository
+                .findByBusinessIdAndEmployeeIdAndDateAndStatusNot(businessId, employeeId, date,
+                        AppointmentStatus.CANCELLED);
+
+        LocalTime targetEnd = targetStart.plusMinutes(durationMinutes);
+
+        for (Appointment existing : activeAppointments) {
+            LocalTime existingStart = existing.getTime();
+            LocalTime existingEnd = existingStart.plusMinutes(existing.getService().getDurationInMinutes());
+
+            // Si los rangos de tiempo se interceptan
+            if (targetStart.isBefore(existingEnd) && targetEnd.isAfter(existingStart)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<AppointmentDTO> convertToDtoList(List<Appointment> appointments) {
+        List<AppointmentDTO> dtos = new ArrayList<>();
         for (Appointment app : appointments) {
             AppointmentDTO dto = new AppointmentDTO();
             dto.setId(app.getId());
@@ -74,36 +146,11 @@ public class AppointmentService {
             dto.setBusinessId(app.getBusiness().getId());
             dto.setEmployeeId(app.getEmployee().getId());
             dto.setServiceId(app.getService().getId());
-            
-            // Agregamos strings útiles para que el frontend los dibuje directo
             dto.setEmployeeName(app.getEmployee().getName());
             dto.setServiceName(app.getService().getName());
             dto.setServicePrice(app.getService().getPrice());
-
             dtos.add(dto);
         }
         return dtos;
-    }
-
-    // 3. ACTUALIZAR ESTADO U OBSERVACIONES (Para cuando cambian a CONFIRMED, CANCELLED, etc.)
-    public AppointmentDTO updateStatusAndObservations(Long appointmentId, AppointmentStatus newStatus, String newObservations) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
-
-        if (newStatus != null) {
-            appointment.setStatus(newStatus);
-        }
-        if (newObservations != null) {
-            appointment.setObservations(newObservations);
-        }
-
-        Appointment updated = appointmentRepository.save(appointment);
-        
-        // Preparamos respuesta básica estructurada
-        AppointmentDTO dto = new AppointmentDTO();
-        dto.setId(updated.getId());
-        dto.setStatus(updated.getStatus());
-        dto.setObservations(updated.getObservations());
-        return dto;
     }
 }

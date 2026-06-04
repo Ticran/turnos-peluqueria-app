@@ -23,7 +23,9 @@ export default function BookingSection({ bookingProps }) {
     setSelectedDate,
     setSelectedTime,
     setActiveCategory,
-    handleResetBooking
+    handleResetBooking,
+    businessInfo, // <-- Extraemos la info del local para los horarios
+    barbersList   // <-- Extraemos los peluqueros reales
   } = bookingProps;
 
   return (
@@ -41,6 +43,7 @@ export default function BookingSection({ bookingProps }) {
               <CategoryTabs
                 activeCategory={activeCategory}
                 setActiveCategory={setActiveCategory}
+                services={filteredServices} // <-- ACÁ PASAMOS LA DATA PARA GENERAR CATEGORÍAS
               />
               <ServicesGrid
                 filteredServices={filteredServices}
@@ -56,7 +59,7 @@ export default function BookingSection({ bookingProps }) {
               selectedBarber={selectedBarber}
               setSelectedBarber={setSelectedBarber}
               setBookingStep={setBookingStep}
-              barbersList={bookingProps.barbersList} // <-- Pasamos la data real aquí
+              barbersList={barbersList} // <-- ACÁ VAN LOS PELUQUEROS DE LA BASE DE DATOS
             />
           )}
 
@@ -71,6 +74,7 @@ export default function BookingSection({ bookingProps }) {
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 setSelectedTime={setSelectedTime}
+                businessInfo={businessInfo} // <-- ACÁ PASAMOS LA INFO PARA LOS HORARIOS REALES
               />
             </div>
           )}

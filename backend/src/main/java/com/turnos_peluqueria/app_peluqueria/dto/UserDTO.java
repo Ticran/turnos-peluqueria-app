@@ -8,7 +8,8 @@ public class UserDTO {
     private Long id;
     private String name;
     private String email;
+    private String password; // Solo se usa al crear, no se devuelve al frontend
     private String specialty;
-    private Role role;       // Puede ser ADMIN o EMPLOYEE
-    private Long businessId; // Asociado al negocio
+    private Role role;
+    private Long businessId;
 }

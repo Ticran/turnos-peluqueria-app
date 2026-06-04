@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 export default function ServiceModal({ isOpen, onClose, service, onServiceSaved }) {
-  if (!isOpen) return null;
+  
 
   // Estados controlados para el formulario
   const [name, setName] = useState("");
@@ -30,6 +30,8 @@ export default function ServiceModal({ isOpen, onClose, service, onServiceSaved 
     }
   }, [service, isOpen]);
 
+  if (!isOpen) return null;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -47,7 +49,7 @@ export default function ServiceModal({ isOpen, onClose, service, onServiceSaved 
     };
 
     const url = service 
-      ? `http://localhost:8080/api/services/${service.id}`
+      ? `http://localhost:8080/api/services/${service.id}/business/1`
       : "http://localhost:8080/api/services";
       
     const method = service ? "PUT" : "POST";

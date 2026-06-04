@@ -1,6 +1,7 @@
 package com.turnos_peluqueria.app_peluqueria.dto;
 
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Data
 public class ServiceDTO {
@@ -8,8 +9,8 @@ public class ServiceDTO {
     private String name;
     private String description;
     private String category;
-    private Double price;
+    private BigDecimal price;
     private Integer durationInMinutes;
     private Boolean active;
-    private Long businessId; // Solo el ID del negocio para no complicar el JSON
+    private Long businessId;
 }

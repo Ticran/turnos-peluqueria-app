@@ -7,6 +7,7 @@ import com.turnos_peluqueria.app_peluqueria.repository.BusinessRepository;
 import com.turnos_peluqueria.app_peluqueria.repository.ServiceEntityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +17,13 @@ public class ServiceEntityService {
 
     @Autowired
     private ServiceEntityRepository serviceRepository;
-
     @Autowired
     private BusinessRepository businessRepository;
 
-    // 1. OBTENER SERVICIOS POR NEGOCIO (Para mostrar en el catálogo de React)
-    public List<ServiceDTO> getServicesByBusiness(Long businessId) {
-        List<ServiceEntity> entities = serviceRepository.findByBusinessId(businessId);
+    @Transactional(readOnly = true)
+    public List<ServiceDTO> getActiveServices(Long businessId) {
+        List<ServiceEntity> entities = serviceRepository.findByBusinessIdAndActiveTrue(businessId);
         List<ServiceDTO> dtos = new ArrayList<>();
-
-        // Pasamos los datos de las Entidades a DTOs de forma manual y simple
         for (ServiceEntity entity : entities) {
             ServiceDTO dto = new ServiceDTO();
             dto.setId(entity.getId());
@@ -41,51 +39,47 @@ public class ServiceEntityService {
         return dtos;
     }
 
-    // 2. CREAR UN NUEVO SERVICIO (Desde el panel de Admin)
+    @Transactional
     public ServiceDTO createService(ServiceDTO dto) {
-        // Buscamos si el negocio existe primero
         Business business = businessRepository.findById(dto.getBusinessId())
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
 
-        // Creamos la entidad y le pasamos los datos del DTO
         ServiceEntity entity = new ServiceEntity();
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setCategory(dto.getCategory());
         entity.setPrice(dto.getPrice());
         entity.setDurationInMinutes(dto.getDurationInMinutes());
-        entity.setActive(dto.getActive() != null ? dto.getActive() : true);
-        entity.setBusiness(business); // Asignamos el negocio dueño de este servicio
+        entity.setActive(true);
+        entity.setBusiness(business);
 
-        // Guardamos en la base de datos
-        ServiceEntity savedEntity = serviceRepository.save(entity);
-
-        // Devolvemos el DTO con el ID ya asignado por Postgres
-        dto.setId(savedEntity.getId());
+        ServiceEntity saved = serviceRepository.save(entity);
+        dto.setId(saved.getId());
         return dto;
     }
 
-    // 3. ACTUALIZAR O ELIMINAR (BAJA LÓGICA) UN SERVICIO
-    public ServiceDTO updateService(Long id, ServiceDTO dto) {
-        // Buscamos el servicio que queremos editar
-        ServiceEntity entity = serviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + id));
+    @Transactional
+    public ServiceDTO updateService(Long businessId, Long id, ServiceDTO dto) {
+        ServiceEntity entity = serviceRepository.findByBusinessIdAndId(businessId, id)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado en este negocio"));
 
-        // Actualizamos los campos con los datos nuevos que vienen del frontend
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setCategory(dto.getCategory());
         entity.setPrice(dto.getPrice());
         entity.setDurationInMinutes(dto.getDurationInMinutes());
-        
-        // Esta línea es la clave para que funcione el botón "Eliminar" en React (active pasa a false)
-        entity.setActive(dto.getActive());
 
-        // Guardamos los cambios
-        ServiceEntity savedEntity = serviceRepository.save(entity);
-
-        // Devolvemos el DTO actualizado
-        dto.setId(savedEntity.getId());
+        ServiceEntity saved = serviceRepository.save(entity);
+        dto.setId(saved.getId());
         return dto;
+    }
+
+    // Nuevo: Soft Delete profesional
+    @Transactional
+    public void softDeleteService(Long businessId, Long id) {
+        ServiceEntity entity = serviceRepository.findByBusinessIdAndId(businessId, id)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+        entity.setActive(false); // Se apaga, no se destruye de la base de datos
+        serviceRepository.save(entity);
     }
 }

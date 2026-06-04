@@ -4,39 +4,57 @@ import com.turnos_peluqueria.app_peluqueria.dto.AppointmentDTO;
 import com.turnos_peluqueria.app_peluqueria.entity.AppointmentStatus;
 import com.turnos_peluqueria.app_peluqueria.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = "*") // Clave para evitar problemas de CORS con React
+@CrossOrigin(origins = "*")
 public class AppointmentController {
 
     @Autowired
     private AppointmentService appointmentService;
 
-    // POST: http://localhost:8080/api/appointments
-    // Para reservar un nuevo turno
+    // Reservar un turno
     @PostMapping
     public AppointmentDTO create(@RequestBody AppointmentDTO dto) {
         return appointmentService.createAppointment(dto);
     }
 
-    // GET: http://localhost:8080/api/appointments/employee/2
-    // Trae los turnos del profesional con ID 2 (Su agenda privada)
-    @GetMapping("/employee/{employeeId}")
-    public List<AppointmentDTO> getByEmployee(@PathVariable Long employeeId) {
-        return appointmentService.getAppointmentsByEmployee(employeeId);
+    // Agenda diaria de un empleado específico
+    @GetMapping("/business/{businessId}/employee/{employeeId}")
+    public List<AppointmentDTO> getByEmployee(
+            @PathVariable Long businessId,
+            @PathVariable Long employeeId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return appointmentService.getAppointmentsByEmployeeAndDate(businessId, employeeId, date);
     }
 
-    // PATCH: http://localhost:8080/api/appointments/5/status?status=CONFIRMED&observations=Trae pelo limpio
-    // Permite actualizar de manera parcial el estado o las notas de un turno sin mandar todo el objeto entero
-    @PatchMapping("/{id}/status")
-    public AppointmentDTO updateStatus(
-            @PathVariable Long id,
-            @RequestParam(required = false) AppointmentStatus status,
-            @RequestParam(required = false) String observations) {
-        return appointmentService.updateStatusAndObservations(id, status, observations);
+    // Agenda global del negocio para un día (Vista de Recepción/Admin)
+    @GetMapping("/business/{businessId}/daily")
+    public List<AppointmentDTO> getDailyAgenda(
+            @PathVariable Long businessId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return appointmentService.getDailyAgenda(businessId, date);
+    }
+
+    // --- ACCIONES DE ESTADO ---
+
+    @PatchMapping("/{id}/business/{businessId}/cancel")
+    public void cancel(@PathVariable Long id, @PathVariable Long businessId) {
+        appointmentService.cancelAppointment(businessId, id);
+    }
+
+    @PatchMapping("/{id}/business/{businessId}/complete")
+    public void complete(@PathVariable Long id, @PathVariable Long businessId) {
+        appointmentService.completeAppointment(businessId, id);
+    }
+
+    @PatchMapping("/{id}/business/{businessId}/noshow")
+    public void noShow(@PathVariable Long id, @PathVariable Long businessId) {
+        appointmentService.registerNoShow(businessId, id);
     }
 }

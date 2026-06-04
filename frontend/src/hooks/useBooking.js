@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 
-export default function useBooking() {
+// Le pasamos el businessId por parámetro (por defecto 1 para tu local de prueba)
+export default function useBooking(businessId = 1) { 
   const [bookingStep, setBookingStep] = useState(1);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
@@ -8,40 +9,31 @@ export default function useBooking() {
   const [selectedTime, setSelectedTime] = useState(null);
   const [activeCategory, setActiveCategory] = useState("todos");
 
-  // Estados para almacenar lo que viene real del Backend
+  // NUEVO: Estados para manejar la información del negocio y la carga
+  const [businessInfo, setBusinessInfo] = useState(null);
   const [dbServices, setDbServices] = useState([]);
   const [dbBarbers, setDbBarbers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Petición HTTP al montar la landing para traer los servicios reales de la DB
+  // Única llamada consolidada al Backend
   useEffect(() => {
-    fetch("http://localhost:8080/api/services/business/1") // Tenant de pruebas ID 1
-      .then((res) => {
-        if (!res.ok) throw new Error("Error obteniendo servicios");
-        return res.json();
-      })
-      .then((data) => {
-        // CORREGIDO: Filtro de seguridad para que la Home oculte los dados de baja lógica
-        const activos = data.filter(svc => svc.active !== false);
-        setDbServices(activos);
-      })
-      .catch((err) => console.error("Error en servicios del backend:", err));
-  }, []);
+    setIsLoading(true);
+    
+    Promise.all([
+      fetch(`http://localhost:8080/api/admin/businesses/${businessId}`).then(res => res.json()),
+      fetch(`http://localhost:8080/api/services/business/${businessId}`).then(res => res.json()),
+      fetch(`http://localhost:8080/api/users/business/${businessId}`).then(res => res.json())
+    ])
+    .then(([businessData, servicesData, barbersData]) => {
+      setBusinessInfo(businessData); // Acá viene el nombre real de la peluquería
+      setDbServices(servicesData.filter(svc => svc.active !== false)); 
+      setDbBarbers(barbersData); // 100% real, sin datos de prueba
+    })
+    .catch(err => console.error("Error crítico sincronizando con el backend:", err))
+    .finally(() => setIsLoading(false));
 
-  // 2. Petición HTTP al backend para traer el equipo real de profesionales
-  useEffect(() => {
-    fetch("http://localhost:8080/api/employees/business/1") 
-      .then((res) => {
-        if (!res.ok) throw new Error("Error obteniendo empleados");
-        return res.json();
-      })
-      .then((data) => setDbBarbers(data))
-      .catch((err) => {
-        console.error("Error en empleados del backend (usando fallback local):", err);
-        setDbBarbers([{ id: 1, name: "Lucas Gómez", role: "BARBER", rating: 4.9, reviews: 120 }]);
-      });
-  }, []);
+  }, [businessId]);
 
-  // Filtramos las categorías de los servicios reales traídos de PostgreSQL
   const filteredServices = useMemo(() => {
     return activeCategory === "todos"
       ? dbServices
@@ -57,6 +49,8 @@ export default function useBooking() {
   }, []);
 
   return {
+    businessInfo, // Exportamos los datos del local para el HeroSection y el Header
+    isLoading,    // Exportamos el estado de carga para mostrar un Spinner si hace falta
     bookingStep,
     selectedService,
     selectedBarber,

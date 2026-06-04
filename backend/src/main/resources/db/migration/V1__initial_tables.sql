@@ -1,31 +1,62 @@
+-- 1. TABLA: NEGOCIOS (businesses)
 CREATE TABLE businesses (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(50),
-    opening_time VARCHAR(10),
-    closing_time VARCHAR(10)
+    opening_time TIME NOT NULL,
+    closing_time TIME NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2. TABLA: USUARIOS / EMPLEADOS (users)
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     specialty VARCHAR(255),
     role VARCHAR(50) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     business_id BIGINT NOT NULL,
-    CONSTRAINT fk_users_business FOREIGN KEY (business_id) REFERENCES businesses(id)
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_users_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 
+-- 3. TABLA: SERVICIOS (services)
 CREATE TABLE services (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    price DECIMAL(10,2) NOT NULL,
+    price DECIMAL(12, 2) NOT NULL,
     duration_in_minutes INT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     business_id BIGINT NOT NULL,
-    CONSTRAINT fk_services_business FOREIGN KEY (business_id) REFERENCES businesses(id)
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_services_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+);
+
+-- 4. TABLA: TURNOS / RESERVAS (appointments)
+CREATE TABLE appointments (
+    id BIGSERIAL PRIMARY KEY,
+    client_name VARCHAR(255) NOT NULL,
+    client_phone VARCHAR(50) NOT NULL,
+    client_email VARCHAR(255),
+    date DATE NOT NULL,
+    time TIME NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    observations TEXT,
+    business_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    service_id BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_appointments_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT
 );

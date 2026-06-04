@@ -2,6 +2,8 @@ package com.turnos_peluqueria.app_peluqueria.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "services")
@@ -19,17 +21,22 @@ public class ServiceEntity {
 
     private String category;
 
-    @Column(nullable = false, columnDefinition = "NUMERIC(10,2)")
-    private Double price;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
-    @Column(nullable = false)
-    private Integer durationInMinutes; // Ejemplo: 30, 60, 120
+    @Column(name = "duration_in_minutes", nullable = false)
+    private Integer durationInMinutes;
 
     @Column(nullable = false)
     private Boolean active = true;
 
-    // Relación Multi-tenant: Cada servicio pertenece a un negocio específico
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = false)
     private Business business;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 }

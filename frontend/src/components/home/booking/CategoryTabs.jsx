@@ -1,17 +1,22 @@
 import React from "react";
 import Tag from "@/components/ui/Tag";
-import { categories } from "@/data/categories";
 
-export default function CategoryTabs({ activeCategory, setActiveCategory }) {
+// Le agregamos la prop 'services' que viene de tu backend
+export default function CategoryTabs({ activeCategory, setActiveCategory, services = [] }) {
+  
+  // Magia pura: Extraemos las categorías únicas de la base de datos y le sumamos "todos" al principio
+  const uniqueCategories = ["todos", ...new Set(services.map(s => s.category).filter(Boolean))];
+
   return (
     <div className="flex flex-wrap gap-2">
-      {categories.map((cat) => (
+      {uniqueCategories.map((cat, index) => (
         <Tag
-          key={cat.id}
-          active={activeCategory === cat.id}
-          onClick={() => setActiveCategory(cat.id)}
+          key={index}
+          active={activeCategory === cat.toLowerCase()}
+          onClick={() => setActiveCategory(cat.toLowerCase())}
         >
-          {cat.name}
+          {/* Capitalizamos la primera letra para que quede prolijo en pantalla */}
+          {cat.charAt(0).toUpperCase() + cat.slice(1)}
         </Tag>
       ))}
     </div>
