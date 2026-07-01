@@ -1,1 +1,1 @@
-ALTER TABLE business ADD COLUMN address VARCHAR(255);
+ALTER TABLE businesses ADD COLUMN address VARCHAR(255);
