@@ -35,6 +35,7 @@ public class BusinessController {
     // GET: Obtener la configuración o datos de un local específico
     @GetMapping("/{id}")
     public BusinessDTO getById(@PathVariable Long id) {
+        System.out.println("====== LLEGÓ AL CONTROLADOR ======");
         return businessService.getBusinessById(id);
     }
 
@@ -55,4 +56,5 @@ public class BusinessController {
             return ResponseEntity.badRequest().body("Error al subir imagen");
         }
     }
+    
 }

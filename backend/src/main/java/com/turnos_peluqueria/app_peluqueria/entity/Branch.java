@@ -2,13 +2,12 @@ package com.turnos_peluqueria.app_peluqueria.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "services")
+@Table(name = "branches")
 @Data
-public class ServiceEntity {
+public class Branch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,26 +16,12 @@ public class ServiceEntity {
     @Column(nullable = false)
     private String name;
 
-    private String description;
-
-    private String category;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
-
-    @Column(name = "duration_in_minutes", nullable = false)
-    private Integer durationInMinutes;
-
-    @Column(nullable = false)
-    private Boolean active = true;
+    private String address;
+    private String phone;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = false)
     private Business business;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_id", nullable = false)
-    private Branch branch;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();

@@ -41,6 +41,10 @@ public class Business {
 
     @Column(name = "address")
     private String address;
+
     @Column(name = "image_url")
     private String imageUrl;
+
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Branch> branches = new java.util.ArrayList<>();
 }

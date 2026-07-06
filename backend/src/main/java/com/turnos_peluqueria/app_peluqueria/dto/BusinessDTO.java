@@ -1,6 +1,7 @@
 package com.turnos_peluqueria.app_peluqueria.dto;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class BusinessDTO {
@@ -13,4 +14,5 @@ public class BusinessDTO {
     private String closingTime; // Ej: "20:00"
     private String address;
     private String imageUrl;
+    private List<BranchDTO> branches;
 }

@@ -14,18 +14,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     Optional<Appointment> findByBusinessIdAndId(Long businessId, Long id);
 
-    List<Appointment> findByBusinessId(Long businessId);
+    // El método de validación debe residir AQUÍ
+    List<Appointment> findByBusinessIdAndBranchIdAndEmployeeIdAndDateAndStatusNot(
+            Long businessId, Long branchId, Long employeeId, LocalDate date, AppointmentStatus status);
 
-    // Corregido: Mapea directo a la propiedad 'employee' de la entidad
-    List<Appointment> findByBusinessIdAndEmployeeId(Long businessId, Long employeeId);
+    List<Appointment> findByBusinessIdAndBranchIdAndDate(Long businessId, Long branchId, LocalDate date);
 
-    // Nuevo: Para filtrar la agenda de un empleado en un día específico
     List<Appointment> findByBusinessIdAndEmployeeIdAndDate(Long businessId, Long employeeId, LocalDate date);
 
-    // Nuevo: Para la agenda global del negocio de un día entero
-    List<Appointment> findByBusinessIdAndDate(Long businessId, LocalDate date);
+    List<Appointment> findByBusinessIdAndEmployeeId(Long businessId, Long employeeId);
 
-    // Nuevo: Para buscar turnos activos y validar solapamientos
-    List<Appointment> findByBusinessIdAndEmployeeIdAndDateAndStatusNot(Long businessId, Long employeeId, LocalDate date,
-            AppointmentStatus status);
+    List<Appointment> findByBusinessIdAndDate(Long businessId, LocalDate date);
 }

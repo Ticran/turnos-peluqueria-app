@@ -13,4 +13,5 @@ public class ServiceDTO {
     private Integer durationInMinutes;
     private Boolean active;
     private Long businessId;
+    private Long branchId;
 }

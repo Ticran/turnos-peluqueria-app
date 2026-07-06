@@ -39,6 +39,7 @@ export default function ServiceModal({ isOpen, onClose, service, onServiceSaved 
     // DTO idéntico al que espera recibir Hibernate / Spring Boot
     const payload = {
       businessId: 1, 
+      branchId: 1,
       name: name,
       price: parseFloat(price),
       // 3. CORREGIDO: Parseamos la variable correcta 'durationInMinutes'

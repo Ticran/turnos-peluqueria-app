@@ -66,24 +66,58 @@ export default function NewAppointmentModal({ isOpen, onClose, onAppointmentCrea
       })
       .then((data) => {
         alert("¡Turno guardado con éxito en tu PostgreSQL! 🚀");
-        
+
         // Si pasaste una función para refrescar la grilla de la agenda, la llamamos
         if (onAppointmentCreated) {
           onAppointmentCreated();
         }
-        
+
         onClose(); // Cerramos el modal limpio
       })
       .catch((err) => {
         console.error("Error al impactar la DB:", err);
         alert("No se pudo agendar el turno. Revisá si Spring Boot está corriendo.");
       });
+
+    const [branches, setBranches] = useState([]);
+    const [formData, setFormData] = useState({
+      clientName: "",
+      clientPhone: "",
+      branchId: "", // NUEVO
+      serviceId: "",
+      employeeId: "",
+      date: "",
+      time: "",
+    });
+
+    // Buscamos las sucursales disponibles al abrir el modal
+    useEffect(() => {
+      if (isOpen) {
+        fetch("http://localhost:8080/api/branches/business/1")
+          .then(res => res.json())
+          .then(data => setBranches(data))
+          .catch(err => console.error("Error al cargar sucursales:", err));
+      }
+    }, [isOpen]);
+
+    // Efecto secundario: Cuando cambie el branchId seleccionado, cargamos sus servicios específicos
+    useEffect(() => {
+      if (formData.branchId) {
+        setLoadingServices(true);
+        fetch(`http://localhost:8080/api/services/business/1/branch/${formData.branchId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setDbServices(data);
+            setLoadingServices(false);
+          });
+      }
+    }, [formData.branchId]);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden m-4">
-        
+
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h2 className="font-semibold text-slate-900 font-poppins">Agendar Nuevo Turno</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
@@ -97,33 +131,48 @@ export default function NewAppointmentModal({ isOpen, onClose, onAppointmentCrea
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Cliente</label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 placeholder="Nombre completo"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#800020] outline-none"
-                onChange={(e) => setFormData({...formData, clientName: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Teléfono</label>
-              <input 
+              <input
                 required
-                type="tel" 
+                type="tel"
                 placeholder="+54 9..."
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[#800020] outline-none"
-                onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
               />
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500 uppercase">Local / Sucursal</label>
+            <select
+              required
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+              onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+              value={formData.branchId}
+            >
+              <option value="">Seleccionar Local</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Servicio</label>
-              <select 
+              <select
                 required
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
                 value={formData.serviceId}
               >
                 <option value="">
@@ -136,12 +185,12 @@ export default function NewAppointmentModal({ isOpen, onClose, onAppointmentCrea
                 ))}
               </select>
             </div>
-            
+
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Barbero</label>
-              <select 
+              <select
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, employeeId: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 value={formData.employeeId}
               >
                 {/* Dejamos mapeado al barbero de prueba que cargamos en Flyway */}
@@ -153,33 +202,33 @@ export default function NewAppointmentModal({ isOpen, onClose, onAppointmentCrea
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Fecha</label>
-              <input 
+              <input
                 required
-                type="date" 
+                type="date"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-500 uppercase">Hora</label>
-              <input 
+              <input
                 required
-                type="time" 
+                type="time"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
-                onChange={(e) => setFormData({...formData, time: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
               />
             </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Cancelar
             </button>
-            <button 
+            <button
               type="submit"
               disabled={loadingServices}
               className="px-5 py-2 text-sm font-medium text-white bg-[#800020] hover:bg-[#5e0017] rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50"

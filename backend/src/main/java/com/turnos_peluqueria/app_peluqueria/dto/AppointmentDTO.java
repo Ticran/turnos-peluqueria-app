@@ -17,6 +17,7 @@ public class AppointmentDTO {
     private AppointmentStatus status;
     private String observations;
 
+    private Long branchId;
     private Long businessId;
     private Long employeeId;
     private Long serviceId;

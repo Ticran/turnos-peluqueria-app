@@ -88,7 +88,8 @@ public class BusinessService {
         businessRepository.save(business);
     }
 
-    // Método auxiliar para evitar repetir código
+    // Reemplazá tu método auxiliar en
+    // com.turnos_peluqueria.app_peluqueria.service.BusinessService
     private BusinessDTO mapToDTO(Business b) {
         BusinessDTO dto = new BusinessDTO();
         dto.setId(b.getId());
@@ -103,6 +104,23 @@ public class BusinessService {
             dto.setOpeningTime(b.getOpeningTime().toString());
         if (b.getClosingTime() != null)
             dto.setClosingTime(b.getClosingTime().toString());
+
+        // 🌟 AGREGÁ ESTE MAPEO DE SUCURSALES:
+        if (b.getBranches() != null) {
+            List<com.turnos_peluqueria.app_peluqueria.dto.BranchDTO> branchDTOs = b.getBranches().stream()
+                    .map(branch -> {
+                        com.turnos_peluqueria.app_peluqueria.dto.BranchDTO bDto = new com.turnos_peluqueria.app_peluqueria.dto.BranchDTO();
+                        bDto.setId(branch.getId());
+                        bDto.setName(branch.getName());
+                        bDto.setAddress(branch.getAddress());
+                        bDto.setPhone(branch.getPhone());
+                        bDto.setBusinessId(b.getId());
+                        return bDto;
+                    }).toList();
+            dto.setBranches(branchDTOs);
+        } else {
+            dto.setBranches(new ArrayList<>());
+        }
 
         return dto;
     }
