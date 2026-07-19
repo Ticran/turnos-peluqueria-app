@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // NUEVO: Busca un empleado específico asegurándose de que pertenezca a ese
     // negocio
     Optional<User> findByBusinessIdAndId(Long businessId, Long id);
+
+    Optional<User> findByEmail(String email);
 }

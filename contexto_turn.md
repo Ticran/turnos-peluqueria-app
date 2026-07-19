@@ -2505,13 +2505,146 @@ Estado actual:
 - ABM operativo funcional
 - lógica visual completa
 
-Próximos pasos:
+===============================================================================
+BACKEND: PERSISTENCIA REAL, FLYWAY Y BASE DE DATOS (NUEVO)
+===============================================================================
 
-- conexión con API REST
-- autenticación real
-- JWT
-- persistencia en PostgreSQL
-- sincronización con Spring Boot
-- actualización real de estados
-- persistencia de observaciones
-- integración con Flyway
+El backend ya no es un boceto teórico; cuenta con su arquitectura por capas completa (Controller, Service, Repository, Entity, DTO) y Spring Security configurado, exponiendo endpoints REST funcionales (como `/businesses/{id}`).
+
+El esquema de base de datos PostgreSQL está completamente automatizado a través de scripts de migración incrementales gestionados por Flyway en la ruta `src/main/resources/db/migration/`:
+
+- **V1__initial_tables.sql**: Creación de las tablas base:
+  - `businesses` (id, name, description, email, phone, opening_time, closing_time, status, timestamps)
+  - `users`
+  - `services`
+  - `appointments`
+- **V2__add_category_to_services.sql**: Incorporación de la columna `category` en la tabla de servicios.
+- **V3__add_address_to_business.sql**: Incorporación de la columna `address` en la tabla de negocios.
+- **V4__add_image_to_businesses.sql**: Incorporación de la columna `image_url` para logos/banners de los negocios.
+- **V5__add_branches.sql**: Introducción de la tabla `branches` (Sucursales/Locales) vinculada jerárquicamente a `businesses` por clave foránea. Se migraron las relaciones de `users`, `services` y `appointments` para apuntar a la sucursal correspondiente.
+- **V6__insert_initial_data.sql**: Semilla de datos nativa (Seed) indispensable para poblar de forma automática el negocio inicial (ID 1) y su sucursal base. Respeta estrictamente las restricciones `NOT NULL` de tiempos de atención y sincroniza las secuencias nativas de PostgreSQL (`BIGSERIAL`) para evitar colisiones en futuras inserciones.
+
+===============================================================================
+ESTADO ACTUAL DE LA INTEGRACIÓN Y LOGROS OPERATIVOS
+===============================================================================
+
+1. **Sincronización de Entidades y Restricciones:** Las entidades de Spring Boot reflejan exactamente las columnas requeridas por el negocio (`opening_time`, `closing_time`, `address`, `image_url`). El ciclo de vida relacional está blindado contra inconsistencias.
+2. **Desbloqueo del Flujo Frontend:** La inserción de datos de la migración V6 solucionó los errores de registros vacíos y permitió que las vistas del frontend consuman información estructural real del negocio idóneo.
+3. **Multi-Tenant Garantizado:** Se mantiene el aislamiento estricto mediante la clave discriminatoria en todas las consultas operativas del sistema.
+
+===============================================================================
+MÓDULO DE AUTENTICACIÓN JWT (CONEXIÓN LOGIN - BACKEND)
+===============================================================================
+
+Se implementó la estructura inicial para conectar la pantalla de inicio de
+sesión de React con el servidor de Spring Boot utilizando tokens JWT.
+
+===============================================================================
+DEPENDENCIAS INCORPORADAS
+===============================================================================
+
+Se agregaron al pom.xml las librerías oficiales para el manejo de seguridad:
+
+- spring-boot-starter-security
+- jjwt-api (versión 0.12.5)
+- jjwt-impl (versión 0.12.5)
+- jjwt-jackson (versión 0.12.5)
+
+Objetivo:
+- Permitir el uso de Spring Security y la generación/lectura de tokens JWT.
+
+===============================================================================
+COMPONENTES BACKEND DESARROLLADOS
+===============================================================================
+
+---
+
+## UserRepository.java
+
+Se agregó un nuevo método de búsqueda:
+
+- findByEmail(String email)
+
+Objetivo:
+- Permitir que el sistema busque al usuario en la base de datos por su correo.
+
+---
+
+## JwtUtil.java
+
+Clase de utilidad para el manejo de tokens.
+
+Responsabilidades:
+- generar tokens firmados con clave secreta (duración 24 horas)
+- inyectar datos del usuario en el token (role, businessId, branchId)
+- extraer el email y validar que el token sea auténtico
+
+---
+
+## AuthController.java
+
+Controlador que expone el endpoint de autenticación.
+
+Ruta:
+- POST "/api/v1/auth/login"
+
+Responsabilidades:
+- recibir el correo y contraseña del formulario
+- verificar el usuario y comparar la contraseña usando BCrypt
+- responder con el token y los datos básicos del usuario si todo es correcto
+
+---
+
+## SecurityConfig.java
+
+Configuración de seguridad de Spring Boot.
+
+Responsabilidades:
+- permitir las peticiones desde el puerto del frontend (CORS)
+- habilitar el acceso libre temporal a las rutas de la API para desarrollo
+- proveer el encriptador de contraseñas BCryptPasswordEncoder
+
+---
+
+## DTOs (Data Transfer Objects)
+
+Clases tipo Record para el intercambio de información:
+- LoginRequest: contiene email y password
+- AuthResponse: contiene el token, datos de usuario e IDs de negocio/sucursal
+
+===============================================================================
+COMPONENTES FRONTEND DESARROLLADOS
+===============================================================================
+
+---
+
+## AuthContext.jsx
+
+Contexto global creado para administrar la sesión en todo el frontend.
+
+Responsabilidades:
+- guardar el usuario y el token en el localStorage de forma persistente
+- ofrecer las funciones globales login() y logout()
+- exponer la propiedad reactiva isAuthenticated
+
+---
+
+## ProtectedRoute.jsx
+
+Componente guardián para proteger las pantallas privadas.
+
+Responsabilidades:
+- revisar si el usuario está logueado antes de dejarlo pasar
+- redirigir automáticamente a "/login" si no hay un token válido
+
+---
+
+## Login.jsx (Modificado)
+
+Se conectó el formulario visual con el backend.
+
+Responsabilidades:
+- capturar el email y password ingresados por el usuario
+- realizar una petición fetch (POST) real hacia el servidor
+- guardar los datos en el AuthContext si la respuesta es exitosa
+- mostrar mensajes de error en pantalla si las credenciales fallan (401)

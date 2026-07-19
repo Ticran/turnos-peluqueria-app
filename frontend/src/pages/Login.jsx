@@ -1,10 +1,60 @@
-import React from "react";
+import React, { useState } from "react";
 import Lock from "lucide-react/dist/esm/icons/lock";
 import Mail from "lucide-react/dist/esm/icons/mail";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error al iniciar sesión");
+      }
+
+      const data = await response.json();
+      
+      // Guardamos la sesión en el contexto global
+      login({
+        id: data.userId,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        businessId: data.businessId,
+        branchId: data.branchId
+      }, data.token);
+
+      // Redirección directa al panel administrativo real
+      navigate("/dashboard");
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-white font-sans text-slate-800 selection:bg-rose-900 selection:text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
 
@@ -25,7 +75,7 @@ export default function Login() {
       {/* MITAD DERECHA: FORMULARIO */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 sm:px-12 relative">
 
-        {/* BOTÓN VOLVER (Absoluto arriba) */}
+        {/* BOTÓN VOLVER */}
         <div className="absolute top-8 left-8 sm:left-12">
           <Link to="/" className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-slate-900 transition-colors">
             <ArrowLeft size={16} /> Volver al inicio
@@ -43,15 +93,26 @@ export default function Login() {
             </p>
           </div>
 
+          {/* MENSAJE DE ERROR */}
+          {error && (
+            <div className="p-3 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-xl font-light">
+              {error}
+            </div>
+          )}
+
           {/* FORMULARIO */}
-          <form className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="space-y-4">
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Correo electrónico"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pl-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
+                  required
+                  disabled={loading}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pI-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
                 />
               </div>
 
@@ -59,8 +120,12 @@ export default function Login() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Contraseña"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pl-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
+                  required
+                  disabled={loading}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pI-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
                 />
               </div>
             </div>
@@ -75,9 +140,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="mt-4 w-full rounded-xl bg-slate-900 py-3.5 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800"
+              disabled={loading}
+              className="mt-4 w-full rounded-xl bg-slate-900 py-3.5 text-sm font-medium text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 disabled:bg-slate-400 disabled:transform-none"
             >
-              Iniciar sesión
+              {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
           </form>
 

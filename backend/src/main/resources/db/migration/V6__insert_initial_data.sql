@@ -48,3 +48,32 @@ VALUES (
     CURRENT_TIMESTAMP, 
     CURRENT_TIMESTAMP
 );
+
+-- ===============================================================================
+-- 3. INSERTAR EL USUARIO ADMINISTRADOR INICIAL
+-- La contraseña es 'admin123' encriptada con BCrypt
+-- ===============================================================================
+INSERT INTO users (
+    name, 
+    email, 
+    password, 
+    specialty, 
+    role, 
+    is_active, 
+    business_id, 
+    branch_id, 
+    created_at, 
+    updated_at
+)
+VALUES (
+    'Administrador Lumen', 
+    'admin@lumen.com', 
+    '$2a$10$wMvE6T25C08L671bL1wO7uxfG4A6MEnI0vP8kG5mD5.Nl9ZJ828uO', -- Clave encriptada de 'password' o 'admin123'
+    'Gestión General', 
+    'ADMIN', 
+    true, 
+    currval('businesses_id_seq'), 
+    currval('branches_id_seq'), 
+    CURRENT_TIMESTAMP, 
+    CURRENT_TIMESTAMP
+);
