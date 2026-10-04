@@ -41,22 +41,16 @@ Actualmente se encuentra **en desarrollo** y forma parte de un proyecto académi
 
 ## ✨ Funcionalidades
 
-El sistema contempla diferentes funcionalidades para la gestión de una peluquería o barbería:
-
-* Gestión de negocios.
-* Gestión de sucursales.
-* Gestión de servicios.
-* Gestión de usuarios.
-* Gestión de turnos.
-* Estados de los turnos.
-* Sistema de autenticación.
-* Control de acceso mediante Spring Security.
-* Autenticación basada en JWT.
-* Gestión de información de los negocios.
-* Gestión de imágenes mediante Cloudinary.
-* Envío de correos mediante Spring Mail.
-* Persistencia de información en PostgreSQL.
-* Migraciones de base de datos mediante Flyway.
+* Plataforma multi-negocio: cada local tiene su propia URL (`/mi-local`), equipo, servicios, sucursales y agenda, con los datos aislados entre locales.
+* Reserva online sin cuenta: el cliente elige sucursal, servicio, profesional, día y un horario realmente libre.
+* Horarios por profesional (franjas por día), bloqueos (vacaciones, descansos) y feriados o días cerrados del local.
+* Agenda semanal, gestión de turnos con filtros, y confirmación o cancelación de turnos.
+* Emails al cliente (solicitud recibida, confirmado, cancelado, recordatorio 24 hs antes) y aviso al local cuando un cliente cancela.
+* Link para que el cliente vea o cancele su turno.
+* Aviso por WhatsApp con el mensaje ya armado.
+* Fotos de los profesionales y portada del local (Cloudinary o disco local).
+* Roles: dueño de la plataforma (alta y suspensión de locales), administrador del local y empleado.
+* Autenticación con JWT y permisos por rol en el backend.
 
 ## 🏗️ Arquitectura
 
@@ -150,13 +144,17 @@ git clone https://github.com/Ticran/turnos-peluqueria-app.git
 cd turnos-peluqueria-app
 ```
 
-### 2. Configurar PostgreSQL
+### 2. Configurar PostgreSQL y secretos
 
-Crear una base de datos PostgreSQL para el proyecto y configurar las credenciales correspondientes en la configuración del backend.
+Crear la base `turnosapp_db` en PostgreSQL. Las migraciones de Flyway se ejecutan al iniciar la aplicación.
 
-Las migraciones de Flyway se ejecutarán al iniciar la aplicación.
+Copiar `backend/application-local.properties.example` como `backend/application-local.properties` y completar la contraseña de PostgreSQL. Ese archivo no se sube a git. Ahí también se configuran, de forma opcional:
 
-> Las credenciales, claves JWT, configuración de correo y credenciales de Cloudinary no deben publicarse en el repositorio.
+* `jwt.secret`: firma de los tokens (obligatorio cambiarlo en producción).
+* `spring.mail.*`: SMTP para los emails de confirmación, cancelación y recordatorio. Sin esto, los emails solo se registran en el log.
+* `cloudinary.url`: fotos en Cloudinary. Sin esto, se guardan en `backend/uploads`.
+
+Lo mismo se puede definir con variables de entorno (`DB_PASSWORD`, `JWT_SECRET`, `FRONTEND_URL`, etc.).
 
 ### 3. Ejecutar el Backend
 
@@ -197,6 +195,27 @@ Iniciar el servidor de desarrollo:
 ```bash
 npm run dev
 ```
+
+### 5. Rutas y usuarios de prueba
+
+| Ruta | Para quién |
+| --- | --- |
+| `/` | Directorio público de locales |
+| `/{slug}` (ej. `/mi-peluqueria-ideal`) | Página de reservas de un local |
+| `/turno/{token}` | El cliente ve o cancela su turno (link que recibe al reservar) |
+| `/login` | Acceso del equipo y del dueño de la plataforma |
+| `/dashboard` | Panel del local (ADMIN y EMPLOYEE) |
+| `/plataforma` | Panel del dueño de la plataforma (SUPER_ADMIN) |
+
+Usuarios que crean las migraciones `V7` y `V8`:
+
+| Rol | Email | Contraseña |
+| --- | --- | --- |
+| Dueño de la plataforma | `owner@plataforma.com` | `plataforma123` |
+| Administrador del local | `admin@lumen.com` | `admin123` |
+| Empleado | `mateo@lumen.com` | `empleado123` |
+
+Cambiar estas contraseñas antes de publicar la aplicación.
 
 También están disponibles los comandos:
 

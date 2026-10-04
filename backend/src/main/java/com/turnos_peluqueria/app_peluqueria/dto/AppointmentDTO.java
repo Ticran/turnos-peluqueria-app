@@ -5,6 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Data
 public class AppointmentDTO {
@@ -27,4 +28,12 @@ public class AppointmentDTO {
     private String employeeName;
     private String serviceName;
     private BigDecimal servicePrice;
+    private Integer serviceDuration;
+
+    // Solo en la respuesta de la reserva y en la página pública del turno (/turno/{token})
+    private UUID cancelToken;
+    private String businessName;
+    private String businessSlug;
+    private String businessPhone;
+    private String address;
 }

@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import Lock from "lucide-react/dist/esm/icons/lock";
 import Mail from "lucide-react/dist/esm/icons/mail";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
+import { homeFor } from "../utils/roles";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,7 +13,7 @@ export default function Login() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -20,21 +22,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await api("/api/v1/auth/login", { method: "POST", body: { email, password } });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Error al iniciar sesión");
-      }
-
-      const data = await response.json();
-      
       // Guardamos la sesión en el contexto global
       login({
         id: data.userId,
@@ -42,11 +31,11 @@ export default function Login() {
         email: data.email,
         role: data.role,
         businessId: data.businessId,
-        branchId: data.branchId
+        branchId: data.branchId,
+        photoUrl: data.photoUrl
       }, data.token);
 
-      // Redirección directa al panel administrativo real
-      navigate("/dashboard");
+      navigate(homeFor(data.role));
 
     } catch (err) {
       setError(err.message);
@@ -54,6 +43,8 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated) return <Navigate to={homeFor(user?.role)} replace />;
 
   return (
     <div className="flex min-h-screen bg-white font-sans text-slate-800 selection:bg-rose-900 selection:text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -68,7 +59,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
         <div className="absolute bottom-12 left-12 text-left z-10 pr-12">
           <h2 className="text-3xl font-light text-white tracking-tight mb-2">Tu estilo, <span className="font-semibold text-rose-400">nuestra prioridad</span></h2>
-          <p className="text-sm text-slate-300 font-light">Accede a tu cuenta para gestionar tus reservas, revisar tu historial y mantener tu imagen siempre impecable.</p>
+          <p className="text-sm text-slate-300 font-light">Gestioná turnos, equipo y servicios de tu local desde un solo lugar.</p>
         </div>
       </div>
 
@@ -89,7 +80,7 @@ export default function Login() {
               Lumen <span className="font-light text-rose-800">Studio</span>
             </h1>
             <p className="mt-2 text-sm font-light text-slate-500">
-              Bienvenido de nuevo. Ingresa tus datos para continuar.
+              Panel del local. Ingresá tus datos para continuar.
             </p>
           </div>
 
@@ -107,12 +98,13 @@ export default function Login() {
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Correo electrónico"
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pI-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pl-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
                 />
               </div>
 
@@ -120,22 +112,15 @@ export default function Login() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Contraseña"
                   required
                   disabled={loading}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pI-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 pl-11 text-sm font-light outline-none transition focus:border-rose-800 focus:bg-white focus:ring-1 focus:ring-rose-800"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs font-medium">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" className="rounded border-slate-300 text-rose-800 focus:ring-rose-800 accent-rose-800" />
-                <span className="text-slate-600">Recordarme</span>
-              </label>
-              <a href="#" className="text-rose-800 hover:text-rose-700 transition">¿Olvidaste tu contraseña?</a>
             </div>
 
             <button
@@ -147,13 +132,10 @@ export default function Login() {
             </button>
           </form>
 
-          {/* FOOTER FORMULARIO */}
-          <div className="text-center text-xs font-light text-slate-500">
-            ¿No tienes cuenta?{" "}
-            <a href="#" className="font-medium text-rose-800 hover:text-rose-700 transition">
-              Regístrate
-            </a>
-          </div>
+          <p className="text-center text-xs font-light text-slate-500">
+            Acceso para el equipo del local. Los clientes reservan sin cuenta desde la{" "}
+            <Link to="/" className="font-medium text-rose-800 hover:text-rose-700 transition">página de reservas</Link>.
+          </p>
         </div>
       </div>
 

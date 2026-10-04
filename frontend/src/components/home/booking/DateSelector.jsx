@@ -1,16 +1,26 @@
-import React from "react";
-import { availableDates } from "@/data/dates";
+import React, { useMemo } from "react";
+import { nextDays } from "@/utils/date";
 
-export default function DateSelector({ selectedDate, setSelectedDate, setSelectedTime }) {
+// Se muestran 14 días abiertos; los feriados cargados como bloqueo aparecen sin horarios
+const DAYS_AHEAD = 14;
+
+export default function DateSelector({ selectedDate, setSelectedDate, setSelectedTime, closedWeekdays = [] }) {
+  // Se omiten los días de la semana en que el local no abre
+  const dates = useMemo(
+    () => nextDays(DAYS_AHEAD + 7).filter((d) => !closedWeekdays.includes(d.isoWeekday)).slice(0, DAYS_AHEAD),
+    [closedWeekdays]
+  );
+
   return (
     <div className="space-y-3">
       <label className="text-xs font-medium text-slate-600 block">Selecciona la Fecha</label>
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x">
-        {availableDates.map((d) => {
+        {dates.map((d) => {
           const isSelected = selectedDate === d.id;
           return (
             <button
               key={d.id}
+              type="button"
               onClick={() => {
                 setSelectedDate(d.id);
                 setSelectedTime(null);
@@ -21,10 +31,9 @@ export default function DateSelector({ selectedDate, setSelectedDate, setSelecte
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
               }`}
             >
-              <span className="text-[10px] font-medium uppercase tracking-tight opacity-70 mb-1">
-                {d.weekday}
-              </span>
-              <span className="text-lg font-light">{d.day}</span>
+              <span className="text-[10px] font-medium uppercase tracking-tight opacity-70">{d.weekday}</span>
+              <span className="text-lg font-light leading-tight">{d.day}</span>
+              <span className="text-[9px] uppercase opacity-60">{d.month}</span>
             </button>
           );
         })}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import HeroSection from "@/components/home/hero/HeroSection";
 import BookingSection from "@/components/home/booking/BookingSection";
@@ -6,25 +7,31 @@ import AboutSection from "@/components/home/about/AboutSection";
 import InfoSection from "@/components/home/info/InfoSection";
 import useBooking from "@/hooks/useBooking";
 
+// Página de reservas de un local: /{slug}
 export default function Home() {
-  // Extraemos toda la data del hook
-  const bookingProps = useBooking();
-  const { businessInfo, isLoading } = bookingProps;
+  const { slug } = useParams();
+  const bookingProps = useBooking(slug);
+  const { businessInfo, isLoading, loadError } = bookingProps;
 
-  // Mientras viaja la info desde Spring Boot, mostramos algo simple
   if (isLoading || !businessInfo) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-screen bg-slate-50">
-          <p className="text-slate-500 animate-pulse">Cargando información del local...</p>
+        <div className="flex flex-col gap-4 items-center justify-center min-h-[60vh] bg-slate-50 px-6 text-center">
+          {loadError ? (
+            <>
+              <p className="text-slate-500">{loadError}</p>
+              <Link to="/" className="text-sm font-medium text-rose-800 hover:underline">Ver todos los locales</Link>
+            </>
+          ) : (
+            <p className="text-slate-500 animate-pulse">Cargando información del local...</p>
+          )}
         </div>
       </MainLayout>
     );
   }
-  console.log("DATOS QUE LLEGAN DEL BACKEND:", businessInfo);
+
   return (
-    <MainLayout>
-      {/* Le "pasamos" la variable businessInfo a los componentes que la necesitan */}
+    <MainLayout businessName={businessInfo.name}>
       <HeroSection businessInfo={businessInfo} />
       <BookingSection bookingProps={bookingProps} />
       <AboutSection businessInfo={businessInfo} />

@@ -1,54 +1,53 @@
 import React from "react";
-import { CheckCircle2, Scissors } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { getStatusCount } from "../../utils/calendar";
+import { getStatusCount } from "@/utils/calendar";
+import { STATUS } from "@/utils/appointmentHelpers";
+import { todayISO } from "@/utils/date";
 
-export default function SideWidget({ role, appointments }) {
-  const counts = getStatusCount(appointments, role);
+// Panel lateral del resumen: estados de la semana y próximos turnos de hoy
+export default function SideWidget({ appointments, onNewAppointment, onSelect }) {
+  const counts = getStatusCount(appointments);
+  const now = new Date().toTimeString().slice(0, 5);
+  const upcoming = appointments
+    .filter((a) => a.date === todayISO() && a.time >= now && (a.status === "PENDING" || a.status === "CONFIRMED"))
+    .slice(0, 5);
 
   return (
-    <Card className="p-6 flex flex-col justify-between">
+    <Card className="p-6 flex flex-col gap-6">
       <div>
-        <h3 className="text-lg font-medium text-slate-900 mb-6">
-          {role === "admin" ? "Resumen de Estados" : "Gestión Rápida"}
-        </h3>
-        
-        {role === "admin" && counts ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-              <span className="text-xs font-medium text-emerald-800">Confirmados</span>
-              <span className="text-xs font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-md">{counts.confirmados}</span>
+        <h3 className="text-lg font-medium text-slate-900 mb-4">Estados de la semana</h3>
+        <div className="space-y-2">
+          {["CONFIRMED", "PENDING", "COMPLETED", "CANCELLED"].map((status) => (
+            <div key={status} className={`flex items-center justify-between p-3 rounded-xl border ${STATUS[status].badge}`}>
+              <span className="text-xs font-medium">{STATUS[status].label}</span>
+              <span className="text-xs font-bold">{counts[status.toLowerCase()]}</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-amber-50/50 rounded-xl border border-amber-100">
-              <span className="text-xs font-medium text-amber-800">Pendientes</span>
-              <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-md">{counts.pendientes}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-rose-50/50 rounded-xl border border-rose-100">
-              <span className="text-xs font-medium text-rose-800">Cancelados</span>
-              <span className="text-xs font-bold bg-rose-500 text-white px-2 py-0.5 rounded-md">{counts.cancelados}</span>
-            </div>
-          </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium text-slate-900 mb-3">Próximos de hoy</h3>
+        {upcoming.length === 0 ? (
+          <p className="text-xs text-slate-400">No quedan turnos para hoy.</p>
         ) : (
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-rose-800 hover:bg-rose-50/30 transition-all group">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 size={18} className="text-slate-400 group-hover:text-rose-800" />
-                <span className="text-sm font-medium text-slate-700 group-hover:text-rose-900">Bloquear Horario</span>
-              </div>
-            </button>
-            <button className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-rose-800 hover:bg-rose-50/30 transition-all group">
-              <div className="flex items-center gap-3">
-                <Scissors size={18} className="text-slate-400 group-hover:text-rose-800" />
-                <span className="text-sm font-medium text-slate-700 group-hover:text-rose-900">Editar Mis Servicios</span>
-              </div>
-            </button>
-          </div>
+          <ul className="space-y-2">
+            {upcoming.map((apt) => (
+              <li key={apt.id}>
+                <button type="button" onClick={() => onSelect(apt)}
+                  className="w-full text-left text-xs p-2 rounded-lg hover:bg-slate-50 border border-slate-100">
+                  <span className="font-semibold">{apt.time}</span> · {apt.clientName}
+                  <span className="block text-slate-400">{apt.serviceName} · {apt.employeeName}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      
-      <Button className="w-full mt-6 py-3">
-        {role === "admin" ? "+ Nuevo Turno" : "Actualizar Disponibilidad"}
+
+      <Button className="w-full py-3 rounded-xl mt-auto" onClick={onNewAppointment}>
+        + Nuevo turno
       </Button>
     </Card>
   );

@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { homeFor } from "../../utils/roles";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, isAuthenticated } = useAuth();
@@ -9,9 +10,9 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
+  // Rol equivocado para esta sección: lo mandamos a su propio panel
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    // Si el rol no está autorizado (ej: Empleado queriendo entrar a configuración), redirige al dashboard base
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={homeFor(user?.role)} replace />;
   }
 
   return children;

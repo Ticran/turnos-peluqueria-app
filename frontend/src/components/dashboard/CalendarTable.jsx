@@ -1,53 +1,79 @@
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Card from "../ui/Carddashmenu";
 import CalendarCell from "./CalendarCell";
-import { daysOfWeek, timeSlots } from "../../data/calendar";
-import { getAppointmentForSlot } from "../../utils/calendar";
+import { buildTimeRows, getAppointmentsForSlot } from "@/utils/calendar";
+import { addDays, startOfWeek, toISODate, todayISO } from "@/utils/date";
 
-export default function CalendarTable({ appointments, role }) {
+const shortDate = (date) => date.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+
+// Agenda semanal tipo Google Calendar: filas cada 30 min según el horario del local
+export default function CalendarTable({ weekStart, onWeekChange, appointments, business, showEmployee, onSelect, onEmptySlot, loading }) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const rows = buildTimeRows(business?.openingTime, business?.closingTime);
+  const today = todayISO();
+
   return (
-    <Card className="col-span-full overflow-hidden border border-slate-300 shadow-sm">
-      {/* Header con un borde inferior más marcado */}
-      <div className="p-6 border-b border-slate-300 bg-white">
-        <h3 className="text-lg font-bold text-slate-950 tracking-tight">Agenda Semanal</h3>
+    <Card className="col-span-full overflow-hidden border border-slate-200">
+      <div className="p-4 sm:p-6 border-b border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-950 tracking-tight">Agenda semanal</h3>
+          <p className="text-xs text-slate-500">
+            {shortDate(days[0])} – {shortDate(days[6])} {loading && <span className="animate-pulse">· actualizando...</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <button type="button" aria-label="Semana anterior" onClick={() => onWeekChange(addDays(weekStart, -7))}
+            className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+            <ChevronLeft size={16} />
+          </button>
+          <button type="button" onClick={() => onWeekChange(startOfWeek(new Date()))}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium">
+            Hoy
+          </button>
+          <button type="button" aria-label="Semana siguiente" onClick={() => onWeekChange(addDays(weekStart, 7))}
+            className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        {/* Tabla con líneas visibles y claras */}
-        <table className="w-full border-collapse border border-slate-300 bg-white">
+        <table className="w-full min-w-[820px] border-collapse table-fixed bg-white">
           <thead>
-            <tr className="border-b-2 border-slate-300">
-              <th className="w-24 p-5 text-center text-xs font-black uppercase tracking-wider text-slate-600 border-r-2 border-slate-300 bg-slate-100">
+            <tr className="border-b border-slate-200">
+              <th className="w-16 p-3 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50 sticky left-0 z-10">
                 Hora
               </th>
-              {daysOfWeek.map((day) => (
-                <th key={day.key} className="p-5 text-center text-xs font-black uppercase tracking-wider text-slate-800 border-r border-slate-300 last:border-r-0 bg-slate-50">
-                  {day.label}
-                </th>
-              ))}
+              {days.map((day) => {
+                const iso = toISODate(day);
+                return (
+                  <th key={iso} className={`p-3 text-center border-l border-slate-200 ${iso === today ? "bg-rose-50 text-rose-900" : "bg-slate-50 text-slate-700"}`}>
+                    <span className="block text-[10px] font-semibold uppercase tracking-wider">
+                      {day.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", "")}
+                    </span>
+                    <span className="block text-lg font-light">{day.getDate()}</span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {timeSlots.map((time, index) => (
-              <tr key={time} className={`border-b border-slate-300 ${index === timeSlots.length - 1 ? 'border-b-0' : ''} h-28`}>
-                <td className="p-4 text-center text-sm font-bold text-slate-700 border-r-2 border-slate-300 bg-slate-100 sticky left-0 z-10">
+            {rows.map((time) => (
+              <tr key={time} className="border-b border-slate-100 last:border-b-0">
+                <td className="p-2 text-center text-xs font-medium text-slate-500 bg-slate-50 sticky left-0 z-10 align-top">
                   {time}
                 </td>
-
-                {daysOfWeek.map((day) => {
-                  const apt = getAppointmentForSlot(appointments, day.key, time);
+                {days.map((day) => {
+                  const iso = toISODate(day);
                   return (
-                    // Mantenemos la estructura intacta, pero sumamos los estilos de borde que necesita la celda
-                    <td
-                      key={day.key}
-                      className="p-1 border-r border-slate-300 last:border-r-0 align-top border-b border-slate-150"
-                    >
-                      <div className="h-full min-h-[100px] w-full">
-                        <CalendarCell
-                          appointment={apt}
-                          role={role}
-                        />
-                      </div>
+                    <td key={iso} className={`p-1 border-l border-slate-100 align-top ${iso === today ? "bg-rose-50/30" : ""}`}>
+                      <CalendarCell
+                        appointments={getAppointmentsForSlot(appointments, iso, time)}
+                        showEmployee={showEmployee}
+                        onSelect={onSelect}
+                        onEmpty={onEmptySlot && iso >= today ? () => onEmptySlot(iso, time) : undefined}
+                      />
                     </td>
                   );
                 })}

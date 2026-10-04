@@ -1,65 +1,65 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import StatsGrid from "../components/dashboard/StatsGrid";
-import CalendarTable from "../components/dashboard/CalendarTable";
-import SideWidget from "../components/dashboard/SideWidget";
+import WeekOverview from "../components/dashboard/WeekOverview";
 import AppointmentManagement from "../components/dashboard/appointments/AppointmentManagement";
 import ProfessionalManagement from "../components/dashboard/professionals/ProfessionalManagement";
 import ServiceManagement from "../components/dashboard/services/ServiceManagement";
-import { appointmentsData } from "../data/appointments";
 import SettingsManagement from "../components/dashboard/settings/SettingsManagement";
-import MyAgenda from "../components/dashboard/agenda/MyAgenda";
+import AvailabilityEditor from "../components/dashboard/availability/AvailabilityEditor";
+import MyPhoto from "../components/dashboard/availability/MyPhoto";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
 
 export default function Dashboard() {
-  const [role, setRole] = useState("admin"); 
-  const [activeMenu, setActiveMenu] = useState("dashboard");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [appointments] = useState(appointmentsData);
+  const { user, isAdmin, logout } = useAuth();
+  const [activeMenu, setActiveMenu] = useState(isAdmin ? "dashboard" : "agenda");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [business, setBusiness] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Datos del negocio del usuario logueado (horarios, sucursales): los usan casi todas las secciones
+  useEffect(() => {
+    api(`/api/admin/businesses/${user.businessId}`)
+      .then(setBusiness)
+      .catch((err) => setError(err.message));
+  }, [user.businessId]);
+
+  if (!business) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-slate-500 p-6 text-center">
+        {error ? `No se pudo cargar el panel: ${error}` : <span className="animate-pulse">Cargando panel...</span>}
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout
       isSidebarOpen={isSidebarOpen}
       setIsSidebarOpen={setIsSidebarOpen}
-      role={role}
-      setRole={setRole}
+      isAdmin={isAdmin}
+      user={user}
+      businessName={business.name}
+      businessSlug={business.slug}
+      onLogout={logout}
       activeMenu={activeMenu}
       setActiveMenu={setActiveMenu}
     >
-      {/* 1. Dashboard General (ESTO ES LO QUE FALTABA) */}
-      {activeMenu === "dashboard" && (
-        <div className="space-y-8 animate-in fade-in duration-300">
+      {activeMenu === "dashboard" && isAdmin && <WeekOverview business={business} isAdmin />}
+      {activeMenu === "agenda" && <WeekOverview business={business} isAdmin={false} />}
+      {activeMenu === "disponibilidad" && (
+        <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-medium text-slate-900">Resumen General</h1>
-            <p className="text-sm text-slate-500 mt-1">Estadísticas y control del salón en tiempo real.</p>
+            <h1 className="text-2xl font-medium text-slate-900">Mi perfil y disponibilidad</h1>
+            <p className="text-sm text-slate-500">Tus horarios de atención y los días u horas que no vas a estar.</p>
           </div>
-          <StatsGrid role={role} />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <CalendarTable appointments={appointments} role={role} />
-            <SideWidget role={role} appointments={appointments} />
-          </div>
+          <MyPhoto businessId={business.id} />
+          <AvailabilityEditor business={business} employee={user} />
         </div>
       )}
-
-      {/* 2. Gestión de Servicios */}
-      {activeMenu === "servicios" && (
-        <ServiceManagement role={role} />
-      )}
-
-      {/* 3. Gestión de Turnos */}
-      {activeMenu === "turnos" && (
-        <AppointmentManagement role={role} appointments={appointments} />
-      )}
-
-      {/* 4. Gestión de Profesionales */}
-      {activeMenu === "profesionales" && (
-        <ProfessionalManagement role={role} />
-      )}
-      
-      {activeMenu === "configuracion" && <SettingsManagement role={role} />}
-
-      {activeMenu === "agenda" && (
-        <MyAgenda role={role} />
-      )}
+      {activeMenu === "turnos" && isAdmin && <AppointmentManagement business={business} />}
+      {activeMenu === "profesionales" && isAdmin && <ProfessionalManagement business={business} currentUserId={user.id} />}
+      {activeMenu === "servicios" && isAdmin && <ServiceManagement business={business} />}
+      {activeMenu === "configuracion" && isAdmin && <SettingsManagement business={business} onSaved={setBusiness} />}
     </DashboardLayout>
   );
 }

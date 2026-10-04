@@ -7,5 +7,6 @@ public record AuthResponse(
         String email,
         String role,
         Long businessId,
-        Long branchId) {
+        Long branchId,
+        String photoUrl) {
 }

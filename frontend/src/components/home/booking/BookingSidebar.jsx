@@ -1,120 +1,107 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import BookingSummary from "./BookingSummary";
+import { formatBookingDate } from "@/utils/date";
 
-export default function BookingSidebar({ selectedService, selectedBarber, selectedDate, selectedTime, handleResetBooking }) {
-  // Estados locales para los datos obligatorios del cliente sin login
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
+const inputClass =
+  "w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-1 focus:ring-[#800020]";
+
+export default function BookingSidebar({ selectedService, selectedBarber, selectedDate, selectedTime, handleResetBooking, confirmBooking }) {
+  // Datos del cliente: no tiene cuenta, solo deja nombre y teléfono (email opcional)
+  const [client, setClient] = useState({ clientName: "", clientPhone: "", clientEmail: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [booked, setBooked] = useState(null);
 
-  // Verificamos si completó todo el proceso por pasos
   const isStepsCompleted = selectedService && selectedBarber && selectedDate && selectedTime;
 
-  const handleConfirmarReserva = (e) => {
+  const handleChange = (e) => setClient({ ...client, [e.target.name]: e.target.value });
+
+  const handleConfirmarReserva = async (e) => {
     e.preventDefault();
-    if (!clientName || !clientPhone) {
-      alert("Por favor, ingresá tu nombre y teléfono para agendar el turno.");
-      return;
-    }
-
+    setError(null);
     setLoading(true);
-
-    // Mapeo perfecto compatible con las entidades e Hibernate de Spring Boot
-    const payloadTurno = {
-      businessId: 1, // Multi-tenant por defecto (Tenant 1 de pruebas)
-      employeeId: parseInt(selectedBarber.id),
-      serviceId: parseInt(selectedService.id),
-      clientName: clientName,
-      clientPhone: clientPhone,
-      date: selectedDate,               // En formato "YYYY-MM-DD"
-      time: `${selectedTime}:00`        // Le concatenamos los segundos para que lo procese LocalTime en Java
-    };
-
-    fetch("http://localhost:8080/api/appointments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payloadTurno),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al procesar la reserva en el servidor.");
-        return res.json();
-      })
-      .then((data) => {
-        alert(`¡Turno reservado con éxito para ${data.clientName}! Ya figura en la agenda.`);
-        // Limpiamos los campos del formulario de contacto
-        setClientName("");
-        setClientPhone("");
-        // Reseteamos el hook global para que la landing vuelva al Paso 1 (Servicios)
-        handleResetBooking();
-      })
-      .catch((err) => {
-        console.error("Error al guardar el turno:", err);
-        alert("Hubo un problema al conectar con el servidor. Intentá de nuevo.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const appointment = await confirmBooking(client);
+      setBooked(appointment);
+      setClient({ clientName: "", clientPhone: "", clientEmail: "" });
+      handleResetBooking();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white sticky top-6 shadow-xl space-y-6">
-      <h3 className="text-lg font-bold font-poppins tracking-tight border-b border-slate-800 pb-4 text-slate-100">
+    <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white lg:sticky lg:top-24 shadow-xl space-y-6">
+      <h3 className="text-lg font-light tracking-tight border-b border-slate-800 pb-4 text-slate-100">
         Resumen de tu Reserva
       </h3>
 
-      {/* Tarjeta dinámica con los datos seleccionados por el cliente */}
-      <BookingSummary
-        selectedService={selectedService}
-        selectedBarber={selectedBarber}
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
-      />
-
-      {/* Si ya seleccionó todo el flujo de pasos, habilitamos el formulario de contacto directo */}
-      {isStepsCompleted ? (
-        <form onSubmit={handleConfirmarReserva} className="pt-4 border-t border-slate-800 space-y-3 animate-fade-in">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#800020]">
-            Datos de contacto
+      {booked ? (
+        <div className="space-y-4 animate-fade-in" role="status">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">¡Turno solicitado!</p>
+          <p className="text-sm text-slate-300 font-light leading-relaxed">
+            {booked.clientName}, reservaste <strong className="text-white font-medium">{booked.serviceName}</strong> con{" "}
+            {booked.employeeName} el {formatBookingDate(booked.date, booked.time)}.
           </p>
-          
-          <div>
-            <input
-              required
-              type="text"
-              placeholder="Tu nombre completo"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-1 focus:ring-[#800020]"
-            />
+          <p className="text-xs text-slate-400 font-light">
+            El local lo va a confirmar a la brevedad{booked.clientEmail ? " y te avisamos por email" : ""}.
+          </p>
+          <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 space-y-1">
+            <p className="text-[11px] text-slate-400">Guardá este link para ver o cancelar tu turno:</p>
+            <Link to={`/turno/${booked.cancelToken}`} className="text-xs text-rose-300 hover:text-rose-200 break-all underline">
+              {`${window.location.origin}/turno/${booked.cancelToken}`}
+            </Link>
           </div>
-
-          <div>
-            <input
-              required
-              type="tel"
-              placeholder="Número de teléfono (WhatsApp)"
-              value={clientPhone}
-              onChange={(e) => setClientPhone(e.target.value)}
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 outline-none focus:ring-1 focus:ring-[#800020]"
-            />
-          </div>
-
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 text-xs font-medium tracking-wider text-white bg-[#800020] hover:bg-[#5e0017] rounded-xl shadow-md transition-all active:scale-[0.98] disabled:opacity-50 uppercase font-poppins"
+            type="button"
+            onClick={() => setBooked(null)}
+            className="w-full py-2 text-xs text-slate-400 hover:text-white transition-colors"
           >
-            {loading ? "Reservando..." : "Confirmar Reserva"}
+            Reservar otro turno
           </button>
-        </form>
-      ) : (
-        <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-slate-800/60">
-          <p className="text-xs text-slate-400">
-            Completá todos los pasos anteriores para confirmar tu reserva.
-          </p>
         </div>
+      ) : (
+        <>
+          <BookingSummary
+            selectedService={selectedService}
+            selectedBarber={selectedBarber}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+          />
+
+          {isStepsCompleted ? (
+            <form onSubmit={handleConfirmarReserva} className="pt-4 border-t border-slate-800 space-y-3 animate-fade-in">
+              <p className="text-xs font-semibold uppercase tracking-wider text-rose-400">Datos de contacto</p>
+
+              <input required name="clientName" type="text" autoComplete="name" placeholder="Tu nombre completo"
+                value={client.clientName} onChange={handleChange} className={inputClass} />
+              <input required name="clientPhone" type="tel" autoComplete="tel" placeholder="Teléfono (WhatsApp)"
+                value={client.clientPhone} onChange={handleChange} className={inputClass} />
+              <input name="clientEmail" type="email" autoComplete="email" placeholder="Email (opcional)"
+                value={client.clientEmail} onChange={handleChange} className={inputClass} />
+
+              {error && <p className="text-xs text-rose-300 bg-rose-950/40 border border-rose-900 rounded-xl p-2.5">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 text-xs font-medium tracking-wider text-white bg-[#800020] hover:bg-[#5e0017] rounded-xl shadow-md transition-all active:scale-[0.98] disabled:opacity-50 uppercase"
+              >
+                {loading ? "Reservando..." : "Confirmar Reserva"}
+              </button>
+              <button type="button" onClick={handleResetBooking} className="w-full py-2 text-xs text-slate-400 hover:text-white transition-colors">
+                Modificar opciones
+              </button>
+            </form>
+          ) : (
+            <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-slate-800/60">
+              <p className="text-xs text-slate-400">Completá los pasos para confirmar tu reserva.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
