@@ -1,11 +1,12 @@
 import React from "react";
 import Tag from "@/components/ui/Tag";
 
-// Le agregamos la prop 'services' que viene de tu backend
+// 'services' es el catálogo completo de la sucursal (no el filtrado, para no perder pestañas)
 export default function CategoryTabs({ activeCategory, setActiveCategory, services = [] }) {
-  
-  // Magia pura: Extraemos las categorías únicas de la base de datos y le sumamos "todos" al principio
-  const uniqueCategories = ["todos", ...new Set(services.map(s => s.category).filter(Boolean))];
+
+  // Categorías únicas de la base de datos, con "todos" al principio
+  const uniqueCategories = ["todos", ...new Set(services.map(s => s.category?.toLowerCase()).filter(Boolean))];
+  if (uniqueCategories.length <= 2) return null;
 
   return (
     <div className="flex flex-wrap gap-2">

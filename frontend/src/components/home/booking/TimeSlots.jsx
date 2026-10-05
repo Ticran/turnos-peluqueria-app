@@ -2,57 +2,37 @@ import React, { useMemo } from "react";
 import TimeSlotGroup from "./TimeSlotGroup";
 import EmptyState from "@/components/ui/EmptyState";
 
-// Agregamos 'businessInfo' para saber a qué hora abre y cierra tu peluquería
-export default function TimeSlots({ selectedDate, selectedTime, setSelectedTime, businessInfo }) {
-  
-  // Generador automático de horarios en rangos de 30 minutos
-  const dynamicTimeSlots = useMemo(() => {
-    if (!businessInfo?.openingTime || !businessInfo?.closingTime) return {};
-
-    const slots = { Mañana: [], Tarde: [], Noche: [] };
-    
-    // Usamos una fecha cualquiera solo para iterar sobre las horas
-    let currentTime = new Date(`2000-01-01T${businessInfo.openingTime}`);
-    const endTime = new Date(`2000-01-01T${businessInfo.closingTime}`);
-
-    while (currentTime < endTime) {
-      const hours = currentTime.getHours();
-      const mins = currentTime.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours.toString().padStart(2, '0')}:${mins}`;
-
-      // Agrupamos visualmente
-      if (hours < 12) slots.Mañana.push({ id: timeString, time: timeString });
-      else if (hours < 18) slots.Tarde.push({ id: timeString, time: timeString });
-      else slots.Noche.push({ id: timeString, time: timeString });
-
-      // Avanza el reloj 30 minutos
-      currentTime.setMinutes(currentTime.getMinutes() + 30);
+// slots: horarios libres que calcula el backend, ej. ["09:00", "09:30", ...]
+export default function TimeSlots({ selectedDate, selectedTime, setSelectedTime, slots = [], isLoading }) {
+  const groups = useMemo(() => {
+    const result = { Mañana: [], Tarde: [], Noche: [] };
+    for (const time of slots) {
+      const hour = Number(time.slice(0, 2));
+      if (hour < 12) result.Mañana.push(time);
+      else if (hour < 18) result.Tarde.push(time);
+      else result.Noche.push(time);
     }
-
-    // Borra los grupos vacíos (ej: si abre a las 14:00, no muestra el título "Mañana")
-    Object.keys(slots).forEach(key => {
-      if (slots[key].length === 0) delete slots[key];
-    });
-
-    return slots;
-  }, [businessInfo]);
+    return Object.entries(result).filter(([, list]) => list.length > 0);
+  }, [slots]);
 
   if (!selectedDate) {
-    return (
-      <EmptyState>
-        Selecciona un día del carrusel superior para ver los horarios.
-      </EmptyState>
-    );
+    return <EmptyState>Selecciona un día del carrusel superior para ver los horarios.</EmptyState>;
+  }
+  if (isLoading) {
+    return <p className="text-xs text-slate-400 py-4 text-center animate-pulse">Buscando horarios libres...</p>;
+  }
+  if (groups.length === 0) {
+    return <EmptyState>No quedan horarios libres ese día. Probá con otra fecha o profesional.</EmptyState>;
   }
 
   return (
     <div className="space-y-5 pt-4 border-t border-slate-100">
       <label className="text-xs font-medium text-slate-600 block">Horarios Disponibles</label>
-      {Object.entries(dynamicTimeSlots).map(([zone, slots]) => (
+      {groups.map(([zone, times]) => (
         <TimeSlotGroup
           key={zone}
           zone={zone}
-          slots={slots}
+          slots={times}
           selectedTime={selectedTime}
           setSelectedTime={setSelectedTime}
         />

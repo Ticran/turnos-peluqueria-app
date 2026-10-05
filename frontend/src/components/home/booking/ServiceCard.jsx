@@ -27,7 +27,7 @@ export default React.memo(function ServiceCard({ service, isSelected, onSelect }
       </div>
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50 text-[11px]">
         <span className="text-slate-400 font-medium">
-          ⏱ Duración: <strong className="text-slate-600">{service.durationInMinutes}</strong>
+          ⏱ Duración: <strong className="text-slate-600">{service.durationInMinutes} min</strong>
         </span>
         <span className="text-rose-800 font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
           Seleccionar <ArrowRight size={12} />

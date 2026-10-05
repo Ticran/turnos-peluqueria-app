@@ -1,16 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("lumen_user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+const readUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("lumen_user"));
+  } catch {
+    return null;
+  }
+};
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem("lumen_token") || null;
-  });
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(readUser);
+  const [token, setToken] = useState(() => localStorage.getItem("lumen_token"));
 
   const login = (userData, userToken) => {
     setUser(userData);
@@ -26,15 +28,24 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("lumen_token");
   };
 
-  const isAuthenticated = !!token;
+  // Actualiza datos del usuario logueado (ej: nueva foto) sin cerrar sesión
+  const updateUser = (changes) => {
+    const next = { ...user, ...changes };
+    setUser(next);
+    localStorage.setItem("lumen_user", JSON.stringify(next));
+  };
+
+  const isAuthenticated = !!token && !!user;
+  const isAdmin = user?.role === "ADMIN";
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isAuthenticated, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

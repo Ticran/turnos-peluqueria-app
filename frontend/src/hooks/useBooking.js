@@ -1,95 +1,114 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { api } from "@/lib/api";
+import useApi from "./useApi";
 
-export default function useBooking(businessId = 1) {
+// slug: parte de la URL pública del local (/mi-peluqueria)
+export default function useBooking(slug) {
   const [bookingStep, setBookingStep] = useState(1);
-  const [selectedBranch, setSelectedBranch] = useState(null); // NUEVO
+  const [chosenBranch, setChosenBranch] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [activeCategory, setActiveCategory] = useState("todos");
 
-  const [businessInfo, setBusinessInfo] = useState(null);
-  const [branchesList, setBranchesList] = useState([]); // NUEVO
-  const [dbServices, setDbServices] = useState([]);
-  const [dbBarbers, setDbBarbers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // 1. Negocio y sucursales. Con una sola sucursal se elige sola
+  const business = useApi(`/api/public/businesses/${slug}`);
+  const businessId = business.data?.id;
+  const branchesList = useMemo(() => business.data?.branches ?? [], [business.data]);
+  const selectedBranch = chosenBranch ?? (branchesList.length === 1 ? branchesList[0] : null);
 
-  // 1. Carga inicial del Negocio y sus Sucursales
-  useEffect(() => {
-    setIsLoading(true);
-    fetch(`http://localhost:8080/api/admin/businesses/${businessId}`)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Error en el servidor: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setBusinessInfo(data);
-        // Si data.branches no existe o es null, le asigna un array vacío para que no rompa
-        setBranchesList(data.branches || []);
-      })
-      .catch(err => {
-        console.error("Error cargando negocio:", err);
-        // Fallback: si falla la DB, podés setear un array vacío para que el componente no explote
-        setBranchesList([]);
-      })
-      .finally(() => setIsLoading(false));
-  }, [businessId]);
+  // 2. Servicios y profesionales de la sucursal elegida
+  const branchPath = selectedBranch && businessId ? `business/${businessId}/branch/${selectedBranch.id}` : null;
+  const services = useApi(branchPath && `/api/services/${branchPath}`);
+  const barbers = useApi(branchPath && `/api/users/${branchPath}`);
 
-  // 2. Carga dinámica de Servicios y Profesionales cuando se selecciona una Sucursal
-  useEffect(() => {
-    if (!selectedBranch) return;
+  // 3. Horarios libres del profesional para ese servicio y día
+  const slots = useApi(
+    selectedService && selectedBarber && selectedDate
+      ? `/api/appointments/availability?businessId=${businessId}&employeeId=${selectedBarber.id}` +
+          `&serviceId=${selectedService.id}&date=${selectedDate}`
+      : null
+  );
 
-    setIsLoading(true);
-    Promise.all([
-      fetch(`http://localhost:8080/api/services/business/${businessId}/branch/${selectedBranch.id}`).then(res => res.json()),
-      fetch(`http://localhost:8080/api/users/business/${businessId}/branch/${selectedBranch.id}`).then(res => res.json())
-    ])
-      .then(([servicesData, barbersData]) => {
-        setDbServices(servicesData.filter(svc => svc.active !== false));
-        setDbBarbers(barbersData);
-      })
-      .catch(err => console.error("Error sincronizando sucursal:", err))
-      .finally(() => setIsLoading(false));
-  }, [selectedBranch, businessId]);
-
+  const dbServices = useMemo(() => services.data ?? [], [services.data]);
   const filteredServices = useMemo(() => {
     return activeCategory === "todos"
       ? dbServices
-      : dbServices.filter((s) => s.category?.toLowerCase() === activeCategory.toLowerCase());
+      : dbServices.filter((s) => s.category?.toLowerCase() === activeCategory);
   }, [activeCategory, dbServices]);
 
-  const handleResetBooking = useCallback(() => {
-    setSelectedBranch(null);
+  const selectBranch = useCallback((branch) => {
+    setChosenBranch(branch);
     setSelectedService(null);
     setSelectedBarber(null);
-    setSelectedDate(null);
     setSelectedTime(null);
     setBookingStep(1);
   }, []);
 
+  const handleResetBooking = useCallback(() => {
+    setSelectedService(null);
+    setSelectedBarber(null);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setActiveCategory("todos");
+    setBookingStep(1);
+  }, []);
+
+  // Envía la reserva. Si el horario se ocupó mientras tanto, refresca los horarios y propaga el error
+  const reloadSlots = slots.reload;
+  const confirmBooking = useCallback(
+    async ({ clientName, clientPhone, clientEmail }) => {
+      try {
+        return await api("/api/appointments", {
+          method: "POST",
+          body: {
+            businessId,
+            branchId: selectedBranch.id,
+            employeeId: selectedBarber.id,
+            serviceId: selectedService.id,
+            date: selectedDate,
+            time: selectedTime,
+            clientName,
+            clientPhone,
+            clientEmail,
+          },
+        });
+      } catch (err) {
+        setSelectedTime(null);
+        reloadSlots();
+        throw err;
+      }
+    },
+    [businessId, selectedBranch, selectedBarber, selectedService, selectedDate, selectedTime, reloadSlots]
+  );
+
   return {
-    businessInfo,
-    branchesList, // Lista de locales para mostrar en el paso 1
+    businessInfo: business.data,
+    loadError: business.error ?? services.error ?? barbers.error,
+    isLoading: business.loading,
+    branchesList,
     selectedBranch,
-    setSelectedBranch,
-    isLoading,
+    selectBranch,
+    isBranchLoading: services.loading || barbers.loading,
     bookingStep,
     selectedService,
     selectedBarber,
     selectedDate,
     selectedTime,
     activeCategory,
+    services: dbServices,
     filteredServices,
-    barbersList: dbBarbers,
+    barbersList: barbers.data ?? [],
+    availableSlots: slots.data ?? [],
+    slotsLoading: slots.loading,
     setBookingStep,
     setSelectedService,
     setSelectedBarber,
     setSelectedDate,
     setSelectedTime,
     setActiveCategory,
-    handleResetBooking
+    handleResetBooking,
+    confirmBooking,
   };
 }

@@ -1,5 +1,6 @@
 package com.turnos_peluqueria.app_peluqueria.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.turnos_peluqueria.app_peluqueria.entity.Role;
 import lombok.Data;
 
@@ -8,8 +9,12 @@ public class UserDTO {
     private Long id;
     private String name;
     private String email;
-    private String password; // Solo se usa al crear, no se devuelve al frontend
+    // Solo se recibe (al crear o cambiar contraseña); nunca se devuelve al frontend
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
     private String specialty;
     private Role role;
     private Long businessId;
+    private Long branchId;
+    private String photoUrl;
 }

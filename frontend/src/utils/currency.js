@@ -1,4 +1,1 @@
-export const formatPrice = (value) => {
-  if (!value) return "$0";
-  return `$${value.toLocaleString("es-AR")}`;
-};
+export const formatPrice = (value) => `$${Number(value || 0).toLocaleString("es-AR")}`;

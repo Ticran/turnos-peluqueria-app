@@ -11,4 +11,10 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
 
     // Esencial para validar si un negocio ya está registrado y para el Login
     Optional<Business> findByEmail(String email);
+
+    Optional<Business> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
+
+    java.util.List<Business> findByStatusOrderByNameAsc(String status);
 }

@@ -11,7 +11,7 @@ export default function HeroSection({ businessInfo }) {
     <section id="inicio" className="relative w-full h-[260px] bg-slate-900 flex flex-col justify-center overflow-hidden">
       <div className="absolute inset-0">
         <img 
-          src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=1200" 
+          src={businessInfo?.imageUrl || "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=1200"}
           className="w-full h-full object-cover opacity-30" 
           alt={`Interior de ${name}`} 
         />

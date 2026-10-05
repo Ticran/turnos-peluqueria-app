@@ -1,0 +1,21 @@
+# Copiar como backend/application-local.properties (git lo ignora) y completar.
+# Todo lo de acá pisa a application.properties. También se puede usar variables de entorno.
+
+# Base de datos
+spring.datasource.password=TU_PASSWORD_DE_POSTGRES
+
+# Firma de los JWT (mínimo 32 caracteres, distinta en producción)
+# jwt.secret=una_clave_larga_y_secreta_de_al_menos_32_caracteres
+
+# Emails (confirmaciones, cancelaciones, recordatorios). Sin esto no se envían, solo se registran en el log.
+# Ejemplo con Gmail: usar una "contraseña de aplicación" (https://myaccount.google.com/apppasswords)
+# spring.mail.host=smtp.gmail.com
+# spring.mail.port=587
+# spring.mail.username=tu_cuenta@gmail.com
+# spring.mail.password=CONTRASEÑA_DE_APLICACION
+# spring.mail.properties.mail.smtp.auth=true
+# spring.mail.properties.mail.smtp.starttls.enable=true
+# app.mail.from=tu_cuenta@gmail.com
+
+# Fotos en Cloudinary (si no se define, se guardan en backend/uploads)
+# cloudinary.url=cloudinary://API_KEY:API_SECRET@CLOUD_NAME

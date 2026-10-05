@@ -5,6 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "appointments")
@@ -51,6 +52,13 @@ public class Appointment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
+
+    // Va en el link que recibe el cliente para ver o cancelar su turno sin cuenta
+    @Column(name = "cancel_token", nullable = false, unique = true, updatable = false)
+    private UUID cancelToken = UUID.randomUUID();
+
+    @Column(name = "reminder_sent_at")
+    private OffsetDateTime reminderSentAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();

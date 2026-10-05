@@ -7,9 +7,9 @@ import com.turnos_peluqueria.app_peluqueria.repository.UserRepository;
 import com.turnos_peluqueria.app_peluqueria.config.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -17,34 +17,31 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; //
+    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public AuthResponse login(@RequestBody LoginRequest request) {
+        // Mismo mensaje para email inexistente y contraseña incorrecta: no revela qué emails existen
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+                .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas"));
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) { //[cite: 26]
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
+        if (!user.getIsActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario deshabilitado");
+        }
+        if (user.getBusiness() != null && !user.getBusiness().isActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El local está suspendido. Contactá a la plataforma.");
         }
 
-        if (!user.getIsActive()) { //[cite: 26]
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuario deshabilitado");
-        }
-
-        String token = jwtUtil.generateToken(user);
-
-        AuthResponse response = new AuthResponse(
-                token,
-                user.getId(), //[cite: 26]
-                user.getName(), //[cite: 26]
-                user.getEmail(), //[cite: 26]
-                user.getRole().name(), //[cite: 26]
-                user.getBusiness().getId(), //[cite: 26]
-                user.getBranch().getId() //[cite: 26]
-        );
-
-        return ResponseEntity.ok(response);
+        return new AuthResponse(
+                jwtUtil.generateToken(user),
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.getBusiness() != null ? user.getBusiness().getId() : null,
+                user.getBranch() != null ? user.getBranch().getId() : null,
+                user.getPhotoUrl());
     }
 }

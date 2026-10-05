@@ -32,12 +32,15 @@ public class User {
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "business_id", nullable = false)
-    private Business business;
+    @JoinColumn(name = "business_id")
+    private Business business; // null solo para SUPER_ADMIN
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_id", nullable = false)
+    @JoinColumn(name = "branch_id")
     private Branch branch;
+
+    @Column(name = "photo_url")
+    private String photoUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();

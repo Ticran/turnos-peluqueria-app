@@ -1,12 +1,11 @@
-import { 
-  LayoutDashboard, 
-  CalendarDays, 
-  Users, 
-  Scissors, 
-  Clock, 
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  Scissors,
   Settings,
   CalendarClock,
-  User
+  CalendarOff,
 } from "lucide-react";
 
 export const adminMenu = [
@@ -19,4 +18,5 @@ export const adminMenu = [
 
 export const employeeMenu = [
   { id: "agenda", name: "Mi Agenda", icon: CalendarClock },
+  { id: "disponibilidad", name: "Mi Perfil y Horarios", icon: CalendarOff },
 ];

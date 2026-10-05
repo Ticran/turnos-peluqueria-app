@@ -1,105 +1,118 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import Modal from "@/components/ui/Modal";
+import Field, { FormError, inputClass } from "@/components/ui/Field";
 import AppointmentStatusBadge from "./AppointmentStatusBadge";
+import { api } from "@/lib/api";
+import { STATUS_OPTIONS, whatsappLink } from "@/utils/appointmentHelpers";
+import { formatBookingDate } from "@/utils/date";
+import { formatPrice } from "@/utils/currency";
 
-export default function AppointmentModal({ appointment, isOpen, onClose, role }) {
-  const [currentStatus, setCurrentStatus] = useState("");
-  const [observation, setObservation] = useState("");
+// Detalle y gestión de un turno (ADMIN y EMPLOYEE; el backend limita al empleado a sus turnos)
+export default function AppointmentModal({ appointment, businessId, businessName, onClose, onSaved }) {
+  const [status, setStatus] = useState(appointment.status);
+  const [observations, setObservations] = useState(appointment.observations ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (appointment) {
-      setCurrentStatus(appointment.status);
-      setObservation(appointment.observation || "");
+  const whatsappText =
+    `¡Hola ${appointment.clientName}! Te confirmamos tu turno en ${businessName}: ` +
+    `${appointment.serviceName} con ${appointment.employeeName} el ${formatBookingDate(appointment.date, appointment.time)}. ¡Te esperamos!`;
+
+  const save = async (newStatus = status) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await api(`/api/appointments/${appointment.id}/business/${businessId}`, {
+        method: "PATCH",
+        body: { status: newStatus, observations },
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
-  }, [appointment]);
-
-  if (!isOpen || !appointment) return null;
-
-  const handleSave = () => {
-    // Simulación de guardado
-    console.log("Actualizando turno:", { 
-      id: appointment.id, 
-      status: currentStatus, 
-      observation 
-    });
-    alert("Turno actualizado correctamente");
-    onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h2 className="font-semibold text-slate-900">Gestión de Corte</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <Modal title="Detalle del turno" onClose={onClose}>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-slate-900">{appointment.clientName}</h3>
+            <p className="text-sm text-slate-500">{appointment.clientPhone}</p>
+            <a href={whatsappLink(appointment.clientPhone, whatsappText)} target="_blank" rel="noreferrer"
+              className="inline-block mt-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 hover:bg-emerald-100">
+              Avisar por WhatsApp
+            </a>
+            {appointment.clientEmail && <p className="text-sm text-slate-500">{appointment.clientEmail}</p>}
+          </div>
+          <AppointmentStatusBadge status={appointment.status} />
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Información del Cliente */}
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">{appointment.client}</h3>
-              <p className="text-sm text-slate-500">{appointment.phone}</p>
-            </div>
-            <AppointmentStatusBadge status={currentStatus} />
+        <dl className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Servicio</dt>
+            <dd className="font-medium text-slate-800">{appointment.serviceName} · {appointment.serviceDuration} min</dd>
           </div>
-
-          {/* Detalles del Servicio */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Servicio</p>
-              <p className="text-sm font-bold text-slate-800">{appointment.service}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Horario</p>
-              <p className="text-sm font-bold text-slate-800">{appointment.time} hs</p>
-            </div>
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Profesional</dt>
+            <dd className="font-medium text-slate-800">{appointment.employeeName}</dd>
           </div>
-
-          {/* ABM - Solo si es empleado o admin */}
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cambiar Estado</label>
-              <select 
-                value={currentStatus} 
-                onChange={(e) => setCurrentStatus(e.target.value)}
-                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-800 outline-none"
-              >
-                <option value="PENDING">Pendiente</option>
-                <option value="CONFIRMED">Confirmado</option>
-                <option value="COMPLETED">Completado</option>
-                <option value="CANCELLED">Cancelado</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Notas sobre el corte</label>
-              <textarea 
-                value={observation}
-                onChange={(e) => setObservation(e.target.value)}
-                placeholder="Ej: Prefiere degradado con la 0.5..."
-                className="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-800 outline-none min-h-[100px]"
-              />
-            </div>
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Fecha y hora</dt>
+            <dd className="font-medium text-slate-800 first-letter:uppercase">{formatBookingDate(appointment.date, appointment.time)}</dd>
           </div>
-        </div>
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Precio</dt>
+            <dd className="font-medium text-slate-800">{formatPrice(appointment.servicePrice)}</dd>
+          </div>
+        </dl>
 
-        {/* Footer con acciones */}
-        <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-slate-500">Cancelar</button>
-          <button 
-            onClick={handleSave}
-            className="px-6 py-2 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
-          >
-            Guardar Cambios
-          </button>
+        <div className="space-y-4">
+          <Field label="Estado">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Observaciones">
+            <textarea
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              placeholder="Ej: Prefiere degradado con la 0.5..."
+              className={`${inputClass} min-h-[90px]`}
+            />
+          </Field>
+          <FormError>{error}</FormError>
         </div>
       </div>
-    </div>
+
+      <div className="p-6 border-t border-slate-100 flex flex-wrap justify-end gap-3 bg-slate-50">
+        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800">
+          Cerrar
+        </button>
+        {appointment.status === "PENDING" && (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => save("CONFIRMED")}
+            className="px-5 py-2 text-sm font-medium text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 disabled:opacity-50"
+          >
+            Confirmar turno
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => save()}
+          className="px-5 py-2 text-sm font-medium text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-50"
+        >
+          {saving ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </div>
+    </Modal>
   );
 }
