@@ -1,5 +1,6 @@
 package com.turnos_peluqueria.app_peluqueria.repository;
 
+import com.turnos_peluqueria.app_peluqueria.entity.Role;
 import com.turnos_peluqueria.app_peluqueria.entity.User;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +28,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findForUpdate(@Param("businessId") Long businessId, @Param("id") Long id);
 
     Optional<User> findByEmail(String email);
+
+    boolean existsByRole(Role role);
 }

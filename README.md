@@ -148,13 +148,23 @@ cd turnos-peluqueria-app
 
 Crear la base `turnosapp_db` en PostgreSQL. Las migraciones de Flyway se ejecutan al iniciar la aplicación.
 
-Copiar `backend/application-local.properties.example` como `backend/application-local.properties` y completar la contraseña de PostgreSQL. Ese archivo no se sube a git. Ahí también se configuran, de forma opcional:
-
-* `jwt.secret`: firma de los tokens (obligatorio cambiarlo en producción).
+Copiar `backend/application-local.properties.example` como `backend/application-local.properties` y completar la contraseña de PostgreSQL y `jwt.secret` (obligatorio, mínimo 32 caracteres: sin eso el backend no arranca). Ese archivo no se sube a git. El ejemplo trae `app.demo-data=true` para tener el local y los usuarios de prueba. Ahí también se configuran, de forma opcional:
 * `spring.mail.*`: SMTP para los emails de confirmación, cancelación y recordatorio. Sin esto, los emails solo se registran en el log.
 * `cloudinary.url`: fotos en Cloudinary. Sin esto, se guardan en `backend/uploads`.
 
 Lo mismo se puede definir con variables de entorno (`DB_PASSWORD`, `JWT_SECRET`, `FRONTEND_URL`, etc.).
+
+#### Producción
+
+| Variable | Para qué |
+| --- | --- |
+| `JWT_SECRET` | Obligatoria. Clave aleatoria de 32+ caracteres |
+| `CORS_ORIGINS` | URL del frontend, ej. `https://turnos.midominio.com` (varias separadas por coma) |
+| `FRONTEND_URL` / `PUBLIC_URL` | Links de los emails y fotos en disco |
+| `PLATFORM_OWNER_EMAIL` / `PLATFORM_OWNER_PASSWORD` | Crea el SUPER_ADMIN en el primer arranque (contraseña de 12+ caracteres) |
+| `APP_TIMEZONE` | Opcional. Por defecto `America/Argentina/Buenos_Aires` |
+
+En producción **no** se define `app.demo-data`: la migración `V9` borra el local y los usuarios de demo, cuyas contraseñas son públicas.
 
 ### 3. Ejecutar el Backend
 
@@ -207,7 +217,7 @@ npm run dev
 | `/dashboard` | Panel del local (ADMIN y EMPLOYEE) |
 | `/plataforma` | Panel del dueño de la plataforma (SUPER_ADMIN) |
 
-Usuarios que crean las migraciones `V7` y `V8`:
+Usuarios de demo (solo con `app.demo-data=true`, creados por las migraciones `V7` y `V8`):
 
 | Rol | Email | Contraseña |
 | --- | --- | --- |
@@ -215,7 +225,7 @@ Usuarios que crean las migraciones `V7` y `V8`:
 | Administrador del local | `admin@lumen.com` | `admin123` |
 | Empleado | `mateo@lumen.com` | `empleado123` |
 
-Cambiar estas contraseñas antes de publicar la aplicación.
+En producción estos usuarios no existen.
 
 También están disponibles los comandos:
 
