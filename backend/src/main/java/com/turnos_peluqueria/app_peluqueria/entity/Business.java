@@ -45,6 +45,9 @@ public class Business {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "logo_url")
+    private String logoUrl;
+
     // Parte de la URL pública: /mi-peluqueria
     @Column(nullable = false, unique = true)
     private String slug;

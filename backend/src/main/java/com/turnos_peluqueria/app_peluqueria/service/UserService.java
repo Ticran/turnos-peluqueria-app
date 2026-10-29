@@ -20,6 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
 
+    static final int MIN_PASSWORD = 8;
+
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
     private final BranchRepository branchRepository;
@@ -50,8 +52,8 @@ public class UserService {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
 
-        if (dto.getPassword() == null || dto.getPassword().length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres.");
+        if (dto.getPassword() == null || dto.getPassword().length() < MIN_PASSWORD) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos " + MIN_PASSWORD + " caracteres.");
         }
         requireUniqueEmail(dto.getEmail());
 
@@ -79,8 +81,8 @@ public class UserService {
         }
         // Si el admin decide cambiarle la contraseña desde el panel
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            if (dto.getPassword().length() < 6) {
-                throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres.");
+            if (dto.getPassword().length() < MIN_PASSWORD) {
+                throw new IllegalArgumentException("La contraseña debe tener al menos " + MIN_PASSWORD + " caracteres.");
             }
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -134,6 +136,9 @@ public class UserService {
     private void requireUniqueEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("El email es obligatorio.");
+        }
+        if (!email.trim().matches(Validation.EMAIL)) {
+            throw new IllegalArgumentException("El email no es válido.");
         }
         if (userRepository.findByEmail(email.trim().toLowerCase()).isPresent()) {
             throw new IllegalStateException("Ya existe un usuario con ese email.");

@@ -16,7 +16,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, isAdmin, busi
   return (
     <aside className={`bg-slate-900 text-slate-300 flex flex-col fixed md:relative h-full z-30 shrink-0 transition-all duration-300 ${isSidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}>
       <div className="w-64 flex flex-col h-full min-w-[256px]">
-        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 gap-2">
+        <div className="h-16 md:h-20 flex items-center justify-between px-6 border-b border-slate-800 gap-2">
           <span className="text-lg font-medium text-white truncate">{businessName}</span>
           <Button variant="ghost" onClick={() => setIsSidebarOpen(false)} aria-label="Ocultar menú"><ChevronLeft size={20} /></Button>
         </div>

@@ -2,7 +2,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Users,
-  Scissors,
+  ClipboardList,
   Settings,
   CalendarClock,
   CalendarOff,
@@ -12,7 +12,7 @@ export const adminMenu = [
   { id: "dashboard", name: "Panel Principal", icon: LayoutDashboard },
   { id: "turnos", name: "Gestión de Turnos", icon: CalendarDays },
   { id: "profesionales", name: "Profesionales", icon: Users },
-  { id: "servicios", name: "Servicios", icon: Scissors },
+  { id: "servicios", name: "Servicios", icon: ClipboardList },
   { id: "configuracion", name: "Configuración", icon: Settings },
 ];
 

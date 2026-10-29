@@ -64,7 +64,7 @@ export default function BlocksEditor({ business, employeeId = null, title, descr
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       <div className="flex justify-between items-start gap-4">
         <div>
           <h2 className="font-medium text-slate-900">{title}</h2>

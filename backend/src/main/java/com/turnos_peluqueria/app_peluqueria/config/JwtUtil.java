@@ -20,8 +20,12 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
 
-    // En producción definir la variable de entorno JWT_SECRET (mínimo 32 caracteres)
-    public JwtUtil(@Value("${jwt.secret:lumen_studio_super_secret_jwt_key_2026_saas_platform}") String secret) {
+    // Sin valor por defecto: una clave publicada en el repo dejaría falsificar tokens de cualquier rol
+    public JwtUtil(@Value("${jwt.secret:}") String secret) {
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "Falta JWT_SECRET (o jwt.secret en application-local.properties): mínimo 32 caracteres.");
+        }
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

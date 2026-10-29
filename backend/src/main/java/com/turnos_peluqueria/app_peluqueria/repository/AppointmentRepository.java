@@ -3,18 +3,20 @@ package com.turnos_peluqueria.app_peluqueria.repository;
 import com.turnos_peluqueria.app_peluqueria.entity.Appointment;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import com.turnos_peluqueria.app_peluqueria.entity.AppointmentStatus;
 
-@Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
     Optional<Appointment> findByBusinessIdAndId(Long businessId, Long id);
+
+    long countByBusinessIdAndClientPhoneAndStatusInAndDateGreaterThanEqual(
+            Long businessId, String clientPhone, Collection<AppointmentStatus> statuses, LocalDate from);
 
     // Agenda de un empleado en un día: base para solapamientos y disponibilidad
     @EntityGraph(attributePaths = "service")

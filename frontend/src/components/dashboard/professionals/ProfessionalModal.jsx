@@ -18,18 +18,31 @@ export default function ProfessionalModal({ professional, business, onClose, onS
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [photoUrl, setPhotoUrl] = useState(professional?.photoUrl ?? null);
+  const [pendingPhoto, setPendingPhoto] = useState(null); // al crear: se sube después de dar de alta
+  const [uploading, setUploading] = useState(false);
 
-  // La foto se sube apenas se elige (solo al editar: el profesional tiene que existir)
+  const photoPath = (id) => `/api/users/${id}/business/${business.id}/photo`;
+
+  // Al editar se sube apenas se elige; al crear se muestra la vista previa y se sube al guardar
   const handlePhoto = async (e) => {
     const file = e.target.files[0];
+    e.target.value = "";
     if (!file) return;
     setError(null);
+    if (isNew) {
+      setPendingPhoto(file);
+      setPhotoUrl(URL.createObjectURL(file));
+      return;
+    }
+    setUploading(true);
     try {
-      const updated = await uploadImage(`/api/users/${professional.id}/business/${business.id}/photo`, file);
+      const updated = await uploadImage(photoPath(professional.id), file);
       setPhotoUrl(updated.photoUrl);
       onSaved();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -41,10 +54,21 @@ export default function ProfessionalModal({ professional, business, onClose, onS
     setError(null);
     try {
       const body = { ...form, branchId: Number(form.branchId), password: form.password || null };
-      await api(isNew ? "/api/users" : `/api/users/${professional.id}/business/${business.id}`, {
+      const saved = await api(isNew ? "/api/users" : `/api/users/${professional.id}/business/${business.id}`, {
         method: isNew ? "POST" : "PUT",
         body,
       });
+      if (pendingPhoto) {
+        try {
+          await uploadImage(photoPath(saved.id), pendingPhoto);
+        } catch (err) {
+          // El profesional ya quedó creado: no hay que volver a guardar, solo reintentar la foto al editarlo
+          onSaved();
+          alert(`${form.name} quedó creado, pero la foto no se pudo subir: ${err.message}. Editalo para intentar de nuevo.`);
+          onClose();
+          return;
+        }
+      }
       onSaved();
       onClose();
     } catch (err) {
@@ -56,16 +80,17 @@ export default function ProfessionalModal({ professional, business, onClose, onS
 
   return (
     <Modal title={isNew ? "Nuevo profesional" : "Editar profesional"} onClose={onClose} maxWidth="max-w-md">
-      <form className="p-6 space-y-4" onSubmit={handleSubmit}>
-        {!isNew && (
-          <div className="flex items-center gap-4">
-            <Avatar name={form.name} photoUrl={photoUrl} className="w-16 h-16 text-lg" />
-            <label className="text-sm font-medium text-[#800020] hover:underline cursor-pointer">
-              Cambiar foto
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handlePhoto} />
+      <form className="p-4 sm:p-6 space-y-4" onSubmit={handleSubmit}>
+        <div className="flex items-center gap-4">
+          <Avatar name={form.name || "?"} photoUrl={photoUrl} className="w-16 h-16 text-lg" />
+          <div className="space-y-1">
+            <label className={`text-sm font-medium text-[#800020] ${uploading ? "opacity-60" : "hover:underline cursor-pointer"}`}>
+              {uploading ? "Subiendo..." : photoUrl ? "Cambiar foto" : "Subir foto"}
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handlePhoto} disabled={uploading} />
             </label>
+            <p className="text-xs text-slate-500">Recomendado: 400 × 400 px (cuadrada), hasta 5 MB.</p>
           </div>
-        )}
+        </div>
         <Field label="Nombre completo">
           <input required className={inputClass} value={form.name} onChange={set("name")} />
         </Field>
@@ -93,9 +118,9 @@ export default function ProfessionalModal({ professional, business, onClose, onS
             type="password"
             autoComplete="new-password"
             required={isNew}
-            minLength={6}
+            minLength={8}
             className={inputClass}
-            placeholder={isNew ? "Mínimo 6 caracteres" : "Dejar vacío para no cambiarla"}
+            placeholder={isNew ? "Mínimo 8 caracteres" : "Dejar vacío para no cambiarla"}
             value={form.password}
             onChange={set("password")}
           />

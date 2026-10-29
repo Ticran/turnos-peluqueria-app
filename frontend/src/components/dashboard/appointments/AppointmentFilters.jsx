@@ -2,7 +2,7 @@ import React from "react";
 import { STATUS_OPTIONS } from "@/utils/appointmentHelpers";
 
 const controlClass =
-  "bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#800020] focus:border-transparent block w-full p-2.5 outline-none min-w-[150px]";
+  "bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#800020] focus:border-transparent block w-full p-2.5 outline-none min-w-0 lg:min-w-[150px]";
 
 export default function AppointmentFilters({ filters, setFilters, professionals }) {
   const handleChange = (e) => {
@@ -36,9 +36,9 @@ export default function AppointmentFilters({ filters, setFilters, professionals 
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-4 p-5 bg-white border-b border-slate-200">
+    <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-3 sm:gap-4 p-3 sm:p-5 bg-white border-b border-slate-200">
       {fields.map((f) => (
-        <label key={f.name} className="flex flex-col gap-1.5">
+        <label key={f.name} className="flex flex-col gap-1.5 min-w-0">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{f.label}</span>
           {f.input}
         </label>

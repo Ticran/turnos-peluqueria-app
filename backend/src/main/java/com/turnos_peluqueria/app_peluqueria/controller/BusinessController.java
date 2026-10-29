@@ -72,4 +72,11 @@ public class BusinessController {
         AuthUser.requireBusiness(id);
         return businessService.updateImageUrl(id, imageService.uploadImage(file));
     }
+
+    // ADMIN: logo del local (barra de la página de reservas)
+    @PostMapping("/{id}/upload-logo")
+    public BusinessDTO uploadLogo(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        AuthUser.requireBusiness(id);
+        return businessService.updateLogoUrl(id, imageService.uploadImage(file));
+    }
 }

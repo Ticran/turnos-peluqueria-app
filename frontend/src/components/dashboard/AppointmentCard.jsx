@@ -9,7 +9,7 @@ export default function AppointmentCard({ appointment, showEmployee, onClick }) 
       type="button"
       onClick={onClick}
       title={`${time} · ${clientName} · ${serviceName} · ${STATUS[status]?.label}`}
-      className={`w-full p-1.5 rounded-lg border text-left transition-all hover:shadow-sm hover:scale-[1.02] active:scale-95 ${STATUS[status]?.card ?? STATUS.PENDING.card}`}
+      className={`w-full px-1.5 py-1 rounded-md border text-left transition-all hover:shadow-sm hover:scale-[1.02] active:scale-95 ${STATUS[status]?.card ?? STATUS.PENDING.card}`}
     >
       <p className="text-[11px] font-semibold leading-tight truncate">
         {time} {clientName}

@@ -37,7 +37,7 @@ export default function AppointmentModal({ appointment, businessId, businessName
 
   return (
     <Modal title="Detalle del turno" onClose={onClose}>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         <div className="flex justify-between items-start gap-4">
           <div>
             <h3 className="text-xl font-semibold text-slate-900">{appointment.clientName}</h3>

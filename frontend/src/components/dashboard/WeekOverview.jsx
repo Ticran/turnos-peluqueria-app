@@ -19,7 +19,7 @@ export default function WeekOverview({ business, isAdmin }) {
   const [newSlot, setNewSlot] = useState(null); // { date, time } o {} para un turno sin horario precargado
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
         <h1 className="text-2xl font-medium text-slate-900">{isAdmin ? "Resumen general" : "Mi agenda"}</h1>
         <p className="text-sm text-slate-500 mt-1">

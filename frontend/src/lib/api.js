@@ -1,10 +1,19 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+import { demoApi } from "./demoApi";
+
+// Vacío = mismo origen que la página (en desarrollo el proxy de Vite lo pasa al backend).
+// En producción, si el backend está en otro dominio: VITE_API_URL=https://api.midominio.com
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 /**
  * fetch con JSON, token JWT y errores legibles.
  * Lanza Error con el "message" que devuelve el backend (ej: "Ese horario ya está ocupado").
  */
+export const DEMO = import.meta.env.VITE_DEMO === "true";
+
 export async function api(path, { method = "GET", body } = {}) {
+  if (DEMO) {
+    return demoApi(path, { method, body });
+  }
   const token = localStorage.getItem("lumen_token");
   // FormData (archivos) se manda tal cual: el navegador arma el Content-Type multipart
   const isForm = body instanceof FormData;

@@ -17,7 +17,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div
-      className="flex h-screen bg-[#F8FAFC] font-sans text-slate-800 overflow-hidden selection:bg-rose-900 selection:text-white"
+      className="flex h-dvh bg-[#F8FAFC] font-sans text-slate-800 overflow-hidden selection:bg-rose-900 selection:text-white"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <Sidebar
@@ -44,8 +44,8 @@ export default function DashboardLayout({
           isAdmin={isAdmin}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
             {children}
           </div>
         </main>

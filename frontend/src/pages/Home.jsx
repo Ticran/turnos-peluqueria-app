@@ -31,7 +31,7 @@ export default function Home() {
   }
 
   return (
-    <MainLayout businessName={businessInfo.name}>
+    <MainLayout businessName={businessInfo.name} logoUrl={businessInfo.logoUrl}>
       <HeroSection businessInfo={businessInfo} />
       <BookingSection bookingProps={bookingProps} />
       <AboutSection businessInfo={businessInfo} />

@@ -6,8 +6,8 @@ export default function AboutGallery() {
     <div className="lg:col-span-6 grid grid-cols-12 gap-4">
       <div className="col-span-8 rounded-2xl overflow-hidden shadow-sm h-64 sm:h-80 relative group">
         <img 
-          src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=800" 
-          alt="Estaciones del Salón" 
+          src="https://images.unsplash.com/photo-1761971975973-cbb3e59263de?auto=format&fit=crop&q=80&w=800" 
+          alt="Nuestro espacio" 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
       </div>
@@ -15,8 +15,8 @@ export default function AboutGallery() {
         <StatsCard />
         <div className="rounded-2xl overflow-hidden h-40 shadow-sm border border-slate-100">
           <img 
-            src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&q=80&w=400" 
-            alt="Detalle de Barbería Real" 
+            src="https://images.unsplash.com/photo-1767605524203-b942b7fa91b5?auto=format&fit=crop&q=80&w=400" 
+            alt="Detalle del local" 
             className="w-full h-full object-cover"
           />
         </div>

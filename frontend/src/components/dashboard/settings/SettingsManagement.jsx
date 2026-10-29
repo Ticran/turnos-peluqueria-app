@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Check from "lucide-react/dist/esm/icons/check";
 import Field, { FormError, inputClass } from "@/components/ui/Field";
 import { api, uploadImage } from "@/lib/api";
 import BlocksEditor from "../availability/BlocksEditor";
@@ -6,6 +7,15 @@ import { formatTime } from "@/utils/date";
 
 const EMPTY_BRANCH = { name: "", address: "", phone: "" };
 const WEEKDAYS = [[1, "Lun"], [2, "Mar"], [3, "Mié"], [4, "Jue"], [5, "Vie"], [6, "Sáb"], [7, "Dom"]];
+const IMAGE_TYPES = "image/jpeg,image/png,image/webp";
+
+// Guardar es casi instantáneo: una espera mínima deja ver que algo pasó
+const atLeast = (promise, ms = 700) =>
+  Promise.all([promise, new Promise((r) => setTimeout(r, ms))]).then(([value]) => value);
+
+function Spinner() {
+  return <span className="inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full animate-spin" aria-hidden="true" />;
+}
 
 // Datos del local y sucursales (solo ADMIN). onSaved actualiza el negocio en todo el panel
 export default function SettingsManagement({ business, onSaved }) {
@@ -21,8 +31,16 @@ export default function SettingsManagement({ business, onSaved }) {
     closingTime: formatTime(business.closingTime),
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(null); // "cover" | "logo" | null
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+
+  // El aviso de guardado se va solo a los 3 segundos
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(t);
+  }, [message]);
 
   const [branchForm, setBranchForm] = useState(null); // null = cerrado; { id?, name, address, phone }
 
@@ -37,15 +55,21 @@ export default function SettingsManagement({ business, onSaved }) {
 
   const publicUrl = `${window.location.origin}/${business.slug}`;
 
-  const handleCover = async (e) => {
+  // kind: "cover" (portada) o "logo"
+  const handleImage = (kind) => async (e) => {
     const file = e.target.files[0];
+    e.target.value = ""; // permite volver a elegir el mismo archivo
     if (!file) return;
     setError(null);
+    setUploading(kind);
     try {
-      onSaved(await uploadImage(`/api/admin/businesses/${business.id}/upload-image`, file));
-      setMessage("Portada actualizada.");
+      const path = kind === "logo" ? "upload-logo" : "upload-image";
+      onSaved(await atLeast(uploadImage(`/api/admin/businesses/${business.id}/${path}`, file)));
+      setMessage(kind === "logo" ? "Logo actualizado" : "Portada actualizada");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setUploading(null);
     }
   };
 
@@ -61,8 +85,8 @@ export default function SettingsManagement({ business, onSaved }) {
     setError(null);
     setMessage(null);
     try {
-      await api(`/api/admin/businesses/${business.id}`, { method: "PUT", body: settings });
-      await refresh("Configuración guardada.");
+      await atLeast(api(`/api/admin/businesses/${business.id}`, { method: "PUT", body: settings }));
+      await refresh("Cambios guardados");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -91,10 +115,17 @@ export default function SettingsManagement({ business, onSaved }) {
         <p className="text-sm text-slate-500">Datos que ven tus clientes en la página de reservas.</p>
       </div>
 
-      {message && <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-lg p-3" role="status">{message}</p>}
+      {/* Aviso flotante: se ve aunque el botón de guardar esté al final de la página */}
+      <div role="status" aria-live="polite" className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50 flex justify-end">
+        {message && (
+          <p className="flex items-center gap-2 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg">
+            <Check size={16} /> {message}
+          </p>
+        )}
+      </div>
       <FormError>{error}</FormError>
 
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4 justify-between">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4 justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Tu página de reservas</p>
           <a href={publicUrl} target="_blank" rel="noreferrer" className="text-rose-800 font-medium hover:underline break-all">{publicUrl}</a>
@@ -109,16 +140,32 @@ export default function SettingsManagement({ business, onSaved }) {
         <div className="h-32 bg-slate-800">
           {business.imageUrl && <img src={business.imageUrl} alt="Portada actual" className="w-full h-full object-cover opacity-80" />}
         </div>
-        <div className="p-4 flex justify-between items-center gap-4">
-          <p className="text-xs text-slate-500">Imagen de portada de tu página (JPG, PNG o WEBP, hasta 5 MB).</p>
-          <label className="text-sm font-medium text-[#800020] hover:underline cursor-pointer whitespace-nowrap">
-            Cambiar portada
-            <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleCover} />
-          </label>
+        <div className="divide-y divide-slate-100">
+          <ImageRow
+            title="Portada"
+            hint="Recomendado: 1920 × 600 px (horizontal). JPG, PNG o WEBP, hasta 5 MB."
+            label="Cambiar portada"
+            busy={uploading === "cover"}
+            disabled={uploading !== null}
+            onChange={handleImage("cover")}
+          />
+          <ImageRow
+            title="Logo"
+            hint="Recomendado: 512 × 512 px (cuadrado). Se ve redondo en la barra de tu página."
+            label={business.logoUrl ? "Cambiar logo" : "Subir logo"}
+            busy={uploading === "logo"}
+            disabled={uploading !== null}
+            onChange={handleImage("logo")}
+            preview={
+              business.logoUrl
+                ? <img src={business.logoUrl} alt="Logo actual" className="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                : <div className="w-12 h-12 rounded-full bg-slate-100 border border-dashed border-slate-300" aria-hidden="true" />
+            }
+          />
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+      <form onSubmit={handleSave} className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field label="Nombre del local">
             <input required name="name" value={settings.name} onChange={handleChange} className={inputClass} />
@@ -127,8 +174,8 @@ export default function SettingsManagement({ business, onSaved }) {
             <input required type="email" name="email" value={settings.email} onChange={handleChange} className={inputClass} />
           </Field>
           <Field label="Dirección web" className="md:col-span-2">
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-slate-400 whitespace-nowrap">{window.location.host}/</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+              <span className="text-sm text-slate-400 break-all sm:whitespace-nowrap">{window.location.host}/</span>
               <input required name="slug" value={settings.slug} pattern="[a-z0-9]+(-[a-z0-9]+)*"
                 title="Solo minúsculas, números y guiones" onChange={handleChange} className={inputClass} />
             </div>
@@ -166,13 +213,14 @@ export default function SettingsManagement({ business, onSaved }) {
         </div>
 
         <div className="pt-6 border-t border-slate-100 flex justify-end">
-          <button type="submit" disabled={saving} className="bg-slate-900 text-white px-6 py-2 rounded-lg text-sm hover:bg-slate-800 disabled:opacity-50">
+          <button type="submit" disabled={saving} className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-lg text-sm hover:bg-slate-800 disabled:opacity-70">
+            {saving && <Spinner />}
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
       </form>
 
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="font-medium text-slate-900">Sucursales</h2>
           {!branchForm && (
@@ -220,6 +268,23 @@ export default function SettingsManagement({ business, onSaved }) {
         title="Feriados y cierres"
         description="Días u horarios en que cierra todo el local. No se ofrecen turnos con ningún profesional."
       />
+    </div>
+  );
+}
+
+function ImageRow({ title, hint, label, busy, disabled, onChange, preview }) {
+  return (
+    <div className="p-4 flex items-center gap-4">
+      {preview}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-slate-900">{title}</p>
+        <p className="text-xs text-slate-500">{hint}</p>
+      </div>
+      <label className={`inline-flex items-center gap-2 text-sm font-medium text-[#800020] whitespace-nowrap ${disabled ? "opacity-60" : "hover:underline cursor-pointer"}`}>
+        {busy && <Spinner />}
+        {busy ? "Subiendo..." : label}
+        <input type="file" accept={IMAGE_TYPES} className="sr-only" onChange={onChange} disabled={disabled} />
+      </label>
     </div>
   );
 }

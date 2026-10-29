@@ -48,7 +48,7 @@ export default function ServiceModal({ service, business, onClose, onServiceSave
 
   return (
     <Modal title={service ? "Editar servicio" : "Nuevo servicio"} onClose={onClose} maxWidth="max-w-md">
-      <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+      <form className="p-4 sm:p-6 space-y-4" onSubmit={handleSubmit}>
         <Field label="Nombre del servicio">
           <input required className={inputClass} placeholder="Ej. Corte de Autor + Perfilado" value={form.name} onChange={set("name")} />
         </Field>

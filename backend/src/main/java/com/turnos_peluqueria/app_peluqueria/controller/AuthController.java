@@ -23,7 +23,10 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@RequestBody LoginRequest request) {
         // Mismo mensaje para email inexistente y contraseña incorrecta: no revela qué emails existen
-        User user = userRepository.findByEmail(request.email())
+        if (request.email() == null || request.password() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+        }
+        User user = userRepository.findByEmail(request.email().trim().toLowerCase())
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas"));
 

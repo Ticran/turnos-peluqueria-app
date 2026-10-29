@@ -13,7 +13,26 @@ export default function AppointmentTable({ appointments, onRowClick }) {
   }
 
   return (
-    <div className="overflow-x-auto w-full">
+    <>
+    {/* Celular: tarjetas en vez de tabla */}
+    <ul className="md:hidden divide-y divide-slate-100">
+      {appointments.map((apt) => (
+        <li key={apt.id}>
+          <button type="button" onClick={() => onRowClick(apt)} className="w-full text-left p-4 flex justify-between gap-3 hover:bg-slate-50">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-900 truncate">{apt.clientName}</p>
+              <p className="text-xs text-slate-500 truncate">{apt.serviceName} · {apt.employeeName}</p>
+              <p className="text-xs text-slate-700 mt-1 first-letter:uppercase">{formatLongDate(apt.date)} · {apt.time} hs</p>
+            </div>
+            <div className="shrink-0 flex flex-col items-end gap-1">
+              <AppointmentStatusBadge status={apt.status} />
+              <span className="text-[11px] text-slate-400">{formatPrice(apt.servicePrice)}</span>
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+    <div className="hidden md:block overflow-x-auto w-full">
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -54,5 +73,6 @@ export default function AppointmentTable({ appointments, onRowClick }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
