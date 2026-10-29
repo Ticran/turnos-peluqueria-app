@@ -49,7 +49,7 @@ export default function ProfessionalManagement({ business, currentUserId }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {team.map((pro) => (
-            <div key={pro.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <div key={pro.id} className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-4">
                 <Avatar name={pro.name} photoUrl={pro.photoUrl} className="w-14 h-14 text-base" />
                 <div className="min-w-0">

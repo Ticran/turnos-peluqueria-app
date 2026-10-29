@@ -11,16 +11,16 @@ export default function Modal({ title, onClose, children, maxWidth = "max-w-lg" 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-2 sm:p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`bg-white rounded-2xl shadow-xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto border border-slate-200`}
+        className={`bg-white rounded-2xl shadow-xl w-full ${maxWidth} max-h-[92dvh] overflow-y-auto border border-slate-200`}
       >
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0">
           <h2 className="font-semibold text-slate-900">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="text-slate-400 hover:text-slate-700">
             <X size={20} />

@@ -26,6 +26,10 @@ public class AppointmentService {
 
     // ponytail: grilla fija de 30 min; volverla configurable por negocio si algún local la necesita distinta
     static final int SLOT_MINUTES = 30;
+    // ponytail: valores fijos para todos los locales; pasarlos a Business si alguno los quiere distintos
+    static final int MAX_DAYS_AHEAD = 90;          // el cliente reserva como máximo a 3 meses
+    static final int MAX_ACTIVE_PER_PHONE = 3;     // turnos futuros pendientes/confirmados por teléfono y local
+    static final int MAX_RANGE_DAYS = 366;         // consultas del panel
 
     private final AppointmentRepository appointmentRepository;
     private final BusinessRepository businessRepository;
@@ -43,6 +47,10 @@ public class AppointmentService {
                 || isBlank(dto.getClientName()) || isBlank(dto.getClientPhone())) {
             throw new IllegalArgumentException("Faltan datos: sucursal, profesional, servicio, fecha, hora, nombre y teléfono son obligatorios.");
         }
+        validateClient(dto);
+        if (!confirmedByStaff && dto.getDate().isAfter(LocalDate.now().plusDays(MAX_DAYS_AHEAD))) {
+            throw new IllegalArgumentException("Solo se puede reservar hasta " + MAX_DAYS_AHEAD + " días por adelantado.");
+        }
 
         Business business = businessRepository.findById(dto.getBusinessId())
                 .filter(Business::isActive)
@@ -59,6 +67,23 @@ public class AppointmentService {
         ServiceEntity service = serviceRepository.findByBusinessIdAndId(dto.getBusinessId(), dto.getServiceId())
                 .filter(ServiceEntity::getActive)
                 .orElseThrow(() -> new IllegalArgumentException("Servicio no encontrado"));
+
+        // Mismas reglas que la página de reservas: profesional y servicio tienen que atender en esa sucursal
+        // (desde el panel también se le puede dar turno a un ADMIN que atiende)
+        if ((!confirmedByStaff && employee.getRole() != Role.EMPLOYEE)
+                || (employee.getBranch() != null && !employee.getBranch().getId().equals(branch.getId()))) {
+            throw new IllegalArgumentException(employee.getName() + " no atiende en esa sucursal.");
+        }
+        if (service.getBranch() != null && !service.getBranch().getId().equals(branch.getId())) {
+            throw new IllegalArgumentException("Ese servicio no se ofrece en esa sucursal.");
+        }
+        // Anti-spam: un mismo teléfono no puede acaparar la agenda desde la web
+        if (!confirmedByStaff && appointmentRepository.countByBusinessIdAndClientPhoneAndStatusInAndDateGreaterThanEqual(
+                business.getId(), dto.getClientPhone().trim(),
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), LocalDate.now()) >= MAX_ACTIVE_PER_PHONE) {
+            throw new IllegalStateException("Ya tenés " + MAX_ACTIVE_PER_PHONE
+                    + " turnos pendientes en este local. Cancelá alguno o comunicate con el local.");
+        }
 
         LocalTime start = dto.getTime();
         LocalTime end = start.plusMinutes(service.getDurationInMinutes());
@@ -111,7 +136,7 @@ public class AppointmentService {
                 .orElseThrow(() -> new IllegalArgumentException("Servicio no encontrado"));
 
         LocalDate today = LocalDate.now();
-        if (date.isBefore(today) || !business.isActive()) {
+        if (date.isBefore(today) || date.isAfter(today.plusDays(MAX_DAYS_AHEAD)) || !business.isActive()) {
             return List.of();
         }
         LocalTime notBefore = date.equals(today) ? LocalTime.now() : null;
@@ -124,6 +149,9 @@ public class AppointmentService {
     // Turnos de un rango de fechas. employeeId == null trae los de todo el negocio
     @Transactional(readOnly = true)
     public List<AppointmentDTO> getAppointments(Long businessId, LocalDate from, LocalDate to, Long employeeId) {
+        if (to.isBefore(from) || from.plusDays(MAX_RANGE_DAYS).isBefore(to)) {
+            throw new IllegalArgumentException("Rango de fechas inválido (máximo un año).");
+        }
         List<Appointment> appointments = employeeId == null
                 ? appointmentRepository.findByBusinessIdAndDateBetweenOrderByDateAscTimeAsc(businessId, from, to)
                 : appointmentRepository.findByBusinessIdAndEmployeeIdAndDateBetweenOrderByDateAscTimeAsc(businessId, employeeId, from, to);
@@ -155,6 +183,9 @@ public class AppointmentService {
             appointment.setStatus(newStatus);
         }
         if (observations != null) {
+            if (observations.length() > 1000) {
+                throw new IllegalArgumentException("Las observaciones no pueden superar los 1000 caracteres.");
+            }
             appointment.setObservations(observations);
         }
         appointment.setUpdatedAt(OffsetDateTime.now());
@@ -297,6 +328,23 @@ public class AppointmentService {
         dto.setAddress(app.getBranch() != null && app.getBranch().getAddress() != null
                 ? app.getBranch().getAddress() : app.getBusiness().getAddress());
         return dto;
+    }
+
+    // Límites alineados con las columnas de la base (client_name 255, client_phone 50)
+    static void validateClient(AppointmentDTO dto) {
+        if (dto.getClientName().trim().length() > 100) {
+            throw new IllegalArgumentException("El nombre no puede superar los 100 caracteres.");
+        }
+        if (!Validation.isPhone(dto.getClientPhone().trim())) {
+            throw new IllegalArgumentException("Ingresá un teléfono válido (solo números, entre 6 y 15 dígitos).");
+        }
+        if (!isBlank(dto.getClientEmail())
+                && (dto.getClientEmail().trim().length() > 150 || !dto.getClientEmail().trim().matches(Validation.EMAIL))) {
+            throw new IllegalArgumentException("El email no es válido.");
+        }
+        if (dto.getObservations() != null && dto.getObservations().length() > 1000) {
+            throw new IllegalArgumentException("Las observaciones no pueden superar los 1000 caracteres.");
+        }
     }
 
     private static boolean isBlank(String s) {

@@ -18,7 +18,7 @@ export default function AppointmentToolbar({ searchTerm, setSearchTerm, onNewApp
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar cliente, teléfono o servicio"
             aria-label="Buscar turnos"
-            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
+            className="w-full pl-9 pr-3 py-2 text-base sm:text-sm bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
           />
         </div>
         <button
@@ -26,7 +26,7 @@ export default function AppointmentToolbar({ searchTerm, setSearchTerm, onNewApp
           onClick={onNewAppointment}
           className="whitespace-nowrap bg-[#800020] hover:bg-[#5e0017] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
         >
-          <Plus size={16} /> Nuevo turno
+          <Plus size={16} /> <span className="hidden sm:inline">Nuevo turno</span><span className="sm:hidden">Nuevo</span>
         </button>
       </div>
     </div>

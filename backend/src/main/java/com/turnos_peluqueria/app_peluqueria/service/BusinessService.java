@@ -130,6 +130,14 @@ public class BusinessService {
     }
 
     @Transactional
+    public BusinessDTO updateLogoUrl(Long id, String logoUrl) {
+        Business business = businessRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
+        business.setLogoUrl(logoUrl);
+        return mapToDTO(business);
+    }
+
+    @Transactional
     public BranchDTO createBranch(Long businessId, BranchDTO dto) {
         Business business = businessRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Negocio no encontrado"));
@@ -170,9 +178,6 @@ public class BusinessService {
         b.setEmail(dto.getEmail().trim());
         b.setPhone(dto.getPhone());
         b.setAddress(dto.getAddress());
-        if (dto.getImageUrl() != null) {
-            b.setImageUrl(dto.getImageUrl());
-        }
         if (dto.getOpeningTime() != null)
             b.setOpeningTime(LocalTime.parse(dto.getOpeningTime()));
         if (dto.getClosingTime() != null)
@@ -208,6 +213,7 @@ public class BusinessService {
         dto.setPhone(b.getPhone());
         dto.setAddress(b.getAddress());
         dto.setImageUrl(b.getImageUrl());
+        dto.setLogoUrl(b.getLogoUrl());
         dto.setStatus(b.getStatus());
 
         if (b.getOpeningTime() != null)

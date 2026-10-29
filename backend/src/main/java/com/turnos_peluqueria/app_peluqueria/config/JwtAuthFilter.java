@@ -1,5 +1,6 @@
 package com.turnos_peluqueria.app_peluqueria.config;
 
+import com.turnos_peluqueria.app_peluqueria.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,9 +20,11 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -31,14 +34,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             try {
                 Claims claims = jwtUtil.extractAllClaims(header.substring(7));
-                AuthUser user = new AuthUser(
-                        ((Number) claims.get("userId")).longValue(),
-                        claims.getSubject(),
-                        claims.get("role", String.class),
-                        claims.get("businessId") instanceof Number n ? n.longValue() : null); // null = SUPER_ADMIN
-                var auth = new UsernamePasswordAuthenticationToken(
-                        user, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.role())));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                long userId = ((Number) claims.get("userId")).longValue();
+                // El rol sale de la base, no del token: usuario dado de baja o local suspendido = anónimo
+                userRepository.findActiveRole(userId).ifPresent(role -> {
+                    AuthUser user = new AuthUser(
+                            userId,
+                            claims.getSubject(),
+                            role.name(),
+                            claims.get("businessId") instanceof Number n ? n.longValue() : null); // null = SUPER_ADMIN
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            user, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.role())));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                });
             } catch (RuntimeException e) {
                 // Token inválido, vencido o viejo (sin userId): sigue como anónimo y la ruta decide
             }

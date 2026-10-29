@@ -79,7 +79,7 @@ export default function NewAppointmentModal({ business, initialDate, initialTime
 
   return (
     <Modal title="Nuevo turno" onClose={onClose} maxWidth="max-w-xl">
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Cliente">
             <input required className={inputClass} placeholder="Nombre completo"

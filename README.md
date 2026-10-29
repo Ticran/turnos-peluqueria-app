@@ -206,6 +206,31 @@ Iniciar el servidor de desarrollo:
 npm run dev
 ```
 
+### Modo demo (sin backend)
+
+Para mostrar la app sin servidor ni base de datos: el frontend trae un backend falso que corre en el navegador, con datos de ejemplo guardados en cada dispositivo.
+
+* Local: `npm run dev:demo`
+* Vercel: importar el repo con **Root Directory = `frontend`**. `vercel.json` ya usa `npm run build:demo`.
+
+En `/login` aparecen botones para entrar como administrador, profesional o dueño (contraseña `demo1234`). El botón **Reiniciar** abajo a la izquierda vuelve a los datos de ejemplo. Para la versión real, sacar `buildCommand` de `vercel.json`.
+
+### Probar desde el celular
+
+Vite escucha en la red local y le pasa `/api` y `/uploads` al backend, así que alcanza con abrir el frontend desde la IP de la PC.
+
+1. Levantar backend y frontend como arriba. `npm run dev` muestra la dirección `Network: http://192.168.x.x:5173`.
+2. Con el celular **en el mismo Wi-Fi**, abrir esa dirección.
+3. Si no carga, Windows está bloqueando la conexión: aceptar el aviso del firewall para Node.js la primera vez, o marcar la red como **Privada** (Configuración → Red e Internet → Propiedades).
+
+Desde **otra red** (un amigo en su casa) se puede usar un túnel temporal. Con [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) instalado:
+
+```bash
+cloudflared tunnel --url http://localhost:5173
+```
+
+Te da una URL `https://algo.trycloudflare.com` para compartir mientras el comando esté corriendo.
+
 ### 5. Rutas y usuarios de prueba
 
 | Ruta | Para quién |

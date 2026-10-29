@@ -50,7 +50,7 @@ export default function WeeklyScheduleEditor({ business, employeeId }) {
   if (loading && !data) return <p className="text-sm text-slate-400 animate-pulse">Cargando horario...</p>;
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       <div>
         <h2 className="font-medium text-slate-900">Horario semanal</h2>
         <p className="text-xs text-slate-500 mt-1">

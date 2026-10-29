@@ -87,7 +87,7 @@ export default function Platform() {
                 <tr>
                   <th className="p-4 font-medium">Local</th>
                   <th className="p-4 font-medium">Página pública</th>
-                  <th className="p-4 font-medium">Contacto</th>
+                  <th className="p-4 font-medium hidden md:table-cell">Contacto</th>
                   <th className="p-4 font-medium">Estado</th>
                   <th className="p-4" />
                 </tr>
@@ -99,7 +99,7 @@ export default function Platform() {
                     <td className="p-4">
                       <Link to={`/${b.slug}`} target="_blank" className="text-rose-800 hover:underline">/{b.slug}</Link>
                     </td>
-                    <td className="p-4 text-slate-500">{b.email}</td>
+                    <td className="p-4 text-slate-500 hidden md:table-cell">{b.email}</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${b.status === "ACTIVE" ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-slate-600 bg-slate-100 border-slate-300"}`}>
                         {b.status === "ACTIVE" ? "Activo" : "Suspendido"}
@@ -120,7 +120,7 @@ export default function Platform() {
 
       {form && (
         <Modal title="Nuevo local" onClose={() => setForm(null)} maxWidth="max-w-xl">
-          <form onSubmit={handleCreate} className="p-6 space-y-4">
+          <form onSubmit={handleCreate} className="p-4 sm:p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Nombre del local">
                 <input required className={inputClass} value={form.name} onChange={set("name")} />
@@ -147,7 +147,7 @@ export default function Platform() {
                 <input required type="email" className={inputClass} value={form.adminEmail} onChange={set("adminEmail")} />
               </Field>
               <Field label="Contraseña">
-                <input required type="password" minLength={6} autoComplete="new-password" className={inputClass} value={form.adminPassword} onChange={set("adminPassword")} />
+                <input required type="password" minLength={8} autoComplete="new-password" className={inputClass} value={form.adminPassword} onChange={set("adminPassword")} />
               </Field>
             </div>
             <FormError>{formError}</FormError>

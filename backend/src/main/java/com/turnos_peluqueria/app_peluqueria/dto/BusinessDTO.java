@@ -16,6 +16,7 @@ public class BusinessDTO {
     private List<Integer> closedWeekdays; // ISO: 1 = lunes ... 7 = domingo
     private String address;
     private String imageUrl;
+    private String logoUrl;
     private String status; // ACTIVE | SUSPENDED
     private List<BranchDTO> branches;
 }

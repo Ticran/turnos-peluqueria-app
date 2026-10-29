@@ -51,7 +51,7 @@ export default function ServiceManagement({ business }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {servicesList.map((svc) => (
-            <div key={svc.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+            <div key={svc.id} className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
               <div>
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <h3 className="font-semibold text-slate-900">{svc.name}</h3>

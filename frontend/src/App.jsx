@@ -7,11 +7,13 @@ import Platform from "./pages/Platform";
 import CancelAppointment from "./pages/CancelAppointment";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import DemoBanner from "./components/DemoBanner";
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <DemoBanner />
         <Routes>
           <Route path="/" element={<Directory />} />
           <Route path="/login" element={<Login />} />

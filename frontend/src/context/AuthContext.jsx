@@ -2,6 +2,26 @@ import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
+// Lee el vencimiento ("exp", en segundos) del JWT sin validarlo: la firma la valida el backend
+const isExpired = (token) => {
+  try {
+    const { exp } = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return !exp || exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+};
+
+const readToken = () => {
+  const token = localStorage.getItem("lumen_token");
+  if (token && isExpired(token)) {
+    localStorage.removeItem("lumen_token");
+    localStorage.removeItem("lumen_user");
+    return null;
+  }
+  return token;
+};
+
 const readUser = () => {
   try {
     return JSON.parse(localStorage.getItem("lumen_user"));
@@ -11,8 +31,8 @@ const readUser = () => {
 };
 
 export function AuthProvider({ children }) {
+  const [token, setToken] = useState(readToken);
   const [user, setUser] = useState(readUser);
-  const [token, setToken] = useState(() => localStorage.getItem("lumen_token"));
 
   const login = (userData, userToken) => {
     setUser(userData);

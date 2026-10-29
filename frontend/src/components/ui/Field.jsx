@@ -1,7 +1,7 @@
 import React from "react";
 
 export const inputClass =
-  "w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020] disabled:opacity-60";
+  "w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base sm:text-sm outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020] disabled:opacity-60";
 
 // Etiqueta + control de formulario
 export default function Field({ label, children, className = "" }) {

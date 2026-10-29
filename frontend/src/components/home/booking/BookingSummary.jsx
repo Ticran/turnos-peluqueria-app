@@ -1,5 +1,5 @@
 import React from "react";
-import Scissors from "lucide-react/dist/esm/icons/scissors";
+import ClipboardList from "lucide-react/dist/esm/icons/clipboard-list";
 import User from "lucide-react/dist/esm/icons/user";
 import Clock from "lucide-react/dist/esm/icons/clock";
 import SummaryItem from "./SummaryItem";
@@ -11,7 +11,7 @@ export default function BookingSummary({ selectedService, selectedBarber, select
     <div className="space-y-6">
       <div className="space-y-4 text-xs font-medium border-b border-slate-800 pb-5">
         <SummaryItem
-          icon={Scissors}
+          icon={ClipboardList}
           label="Servicio"
           value={selectedService ? `${selectedService.name} · ${selectedService.durationInMinutes} min` : "—"}
         />
